@@ -1,4 +1,5 @@
 #include "../AsciiOscilloscope.hpp"
+
 #include <algorithm>
 #include <iomanip>
 
@@ -8,10 +9,10 @@ AsciiOscilloscope::AsciiOscilloscope(const Config& config) {
 
 void AsciiOscilloscope::configure(const Config& config) {
     mConfig = config;
-    
+
     // Resize age buffers
     mAgeBuffer.assign(mConfig.height, std::vector<int>(mConfig.width, 0));
-    
+
     // Resize and rebuild the static border layout
     rebuildBorderCanvas();
 }
@@ -24,8 +25,10 @@ void AsciiOscilloscope::clearGrid() {
 
 void AsciiOscilloscope::rebuildBorderCanvas() {
     mBorderCanvas.assign(mConfig.height, std::string(mConfig.width, ' '));
-    
-    if (mConfig.width < 2 || mConfig.height < 2) return;
+
+    if (mConfig.width < 2 || mConfig.height < 2) {
+        return;
+    }
 
     // Horizontals
     for (int i = 0; i < mConfig.width; ++i) {
@@ -43,9 +46,13 @@ void AsciiOscilloscope::rebuildBorderCanvas() {
 }
 
 void AsciiOscilloscope::pushSamplePair(double x, double y) {
-    // Coordinate mapping with standard 0.4 height squish aspect ratio fix for terminals
-    int col = static_cast<int>((mConfig.width / 2.0) + (x * mConfig.zoom));
-    int row = static_cast<int>((mConfig.height / 2.0) - (y * mConfig.zoom * 0.4));
+    // Apply layout offsets before scaling by zoom
+    double shiftedX = x + mConfig.offsetX;
+    double shiftedY = y + mConfig.offsetY;
+
+    // Standard height squish aspect ratio correction loop (0.4) for grid mapping
+    int col = static_cast<int>((mConfig.width / 2.0) + (shiftedX * mConfig.zoom));
+    int row = static_cast<int>((mConfig.height / 2.0) - (shiftedY * mConfig.zoom * 0.4));
 
     // Clamp inside borders safely (1 to dimension - 2)
     col = std::clamp(col, 1, mConfig.width - 2);
@@ -53,10 +60,9 @@ void AsciiOscilloscope::pushSamplePair(double x, double y) {
 
     mAgeBuffer[row][col] = mConfig.maxSampleAge;
 }
-
 std::string AsciiOscilloscope::renderToString(double labelX, double labelY) {
     std::stringstream frame;
-    
+
     // Clear screen and home cursor ANSI sequences
     frame << "\033[2J\033[H";
 
@@ -70,17 +76,26 @@ std::string AsciiOscilloscope::renderToString(double labelX, double labelY) {
     // Render Canvas Loop
     for (int r = 0; r < mConfig.height; ++r) {
         for (int c = 0; c < mConfig.width; ++c) {
+
             if (mBorderCanvas[r][c] != ' ') {
                 frame << "\033[37m" << mBorderCanvas[r][c]; // White border
             } else if (mAgeBuffer[r][c] > 0) {
-                // Select symbol based on remaining sample lifetime intensity
-                char symbol = (mAgeBuffer[r][c] > mConfig.fadeThreshold) ? '*' : '.';
-                frame << "\033[33m" << symbol;              // Orange/Yellow trace
-                
-                // Decay the pixel age for the next frame iteration
+                // --- MULTI-STAGE COLOR DECAY ---
+                if (mAgeBuffer[r][c] >= 8) {
+                    // Fresh Head: Intense bright yellow asterisks
+                    frame << "\033[1;33m" << '*';
+                } else if (mAgeBuffer[r][c] >= 4) {
+                    // Mid-life: Dimmer orange/yellow dots
+                    frame << "\033[0;33m" << '.';
+                } else {
+                    // Dying Tail: Red embers right before disappearing
+                    frame << "\033[1;31m" << '.';
+                }
+
+                // Decay pixel age for the next frame
                 mAgeBuffer[r][c]--;
             } else {
-                frame << " ";
+                frame << " "; // Empty inner canvas space
             }
         }
         frame << "\n";

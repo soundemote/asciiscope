@@ -8,11 +8,13 @@
 class AsciiOscilloscope {
 public:
     struct Config {
-        int width          = 120;
-        int height         = 40;
-        double zoom        = 8.0;
-        int maxSampleAge   = 10;
-        int fadeThreshold  = 5;
+        int width         = 120;
+        int height        = 40;
+        double zoom       = 8.0; // Overall scale
+        double offsetX    = 0.0; // Shift trace horizontally (+ is right, - is left)
+        double offsetY    = 0.0; // Shift trace vertically (+ is up, - is down)
+        int maxSampleAge  = 10;
+        int fadeThreshold = 5;
     };
 
     AsciiOscilloscope(const Config& config = Config());

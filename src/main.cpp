@@ -7,11 +7,11 @@
 #include <soemdsp/modulator/Attractor.hpp>
 #include <soemdsp/semath.hpp>
 
-#include "AsciiOscilloscope.hpp"
+#include "asciiscope.hpp"
 
 namespace runtime {
 constexpr int refresh_ms = 10;
-constexpr int steps_per_frame = 30000;
+constexpr int steps_per_frame = 20000;
 constexpr double rotSpeedX = 16.0 / 8.0 * 0.001;
 constexpr double rotSpeedY = 1.0 / 8.0 * 0.01;
 } // namespace runtime
@@ -27,9 +27,9 @@ int main() {
 
   // init
   AsciiOscilloscope::Config scopeConfig;
-  scopeConfig.width = 120;
-  scopeConfig.height = 40;
-  scopeConfig.zoom = 8.0;
+  scopeConfig.width  = 100;
+  scopeConfig.height = 35;
+  scopeConfig.zoom = 6.0;
   AsciiOscilloscope scope(scopeConfig);
 
   double angleX = 0.0;
