@@ -1,3 +1,3 @@
-[submodule "soemdsp"]
-	path = soemdsp
-	url = C:\\Users\\argit\\Desktop\\soemdsp
+[submodule "libs/soemdsp"]
+	path = libs/soemdsp
+	url = https://github.com/soundemote/soemdsp.git
