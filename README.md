@@ -7,4 +7,4 @@
 * ascii based oscilloscope for audio plugins and visual fx
 * high customizeability for general visual fx production
 ```
-![example.gif](https://github.com/soundemote/asciiscope/blob/main/example.gif)! 
+![example.gif](https://github.com/soundemote/asciiscope/blob/main/example.gif)
