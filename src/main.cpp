@@ -1,70 +1,321 @@
 #include <chrono>
-#include <cmath>
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
 #include <iostream>
+#include <optional>
+#include <string_view>
+#include <string>
 #include <thread>
-
-#include <soemdsp/SampleRate.hpp>
-#include <soemdsp/modulator/Attractor.hpp>
-#include <soemdsp/semath.hpp>
 
 #include "asciiscope.hpp"
 
-namespace runtime {
-constexpr int refresh_ms = 10;
-constexpr int steps_per_frame = 20000;
-constexpr double rotSpeedX = 16.0 / 8.0 * 0.001;
-constexpr double rotSpeedY = 1.0 / 8.0 * 0.01;
-} // namespace runtime
+#ifdef _WIN32
+#include <conio.h>
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 
-int main() {
-  std::ios::sync_with_stdio(false);
+namespace {
 
-  // setup dsp
-  soemdsp::SampleRate::freq_ = 44100.0;
-  soemdsp::oscillator::MultiSprottC attractor;
-  attractor.frequency = 20.0;
-  attractor.frequencyChanged();
+bool hasArg(int argc, char** argv, std::string_view target) {
+    for (int i = 1; i < argc; ++i) {
+        if (argv[i] == target) {
+            return true;
+        }
+    }
+    return false;
+}
 
-  // init
-  AsciiOscilloscope::Config scopeConfig;
-  scopeConfig.width  = 100;
-  scopeConfig.height = 35;
-  scopeConfig.zoom = 6.0;
-  AsciiOscilloscope scope(scopeConfig);
+struct Controls {
+    bool running{ true };
+    bool paused{ false };
+    bool help{ false };
+    bool color{ true };
+    int mode{ -1 };
+    double speed{ 1.0 };
+    double density{ 1.0 };
+    double zoom{ 1.0 };
+    int fade{ 2 };
+    bool clearRequested{ false };
+    std::string lastAdjustment{ "ready" };
+};
 
-  double angleX = 0.0;
-  double angleY = 0.0;
-
-  std::cout << "Starting Clean-Slate Scope... (Ctrl+C to quit)" << std::endl;
-
-  while (true) {
-    angleX = std::fmod(angleX + runtime::rotSpeedX, soemdsp::constant::kTAU);
-    angleY = std::fmod(angleY + runtime::rotSpeedY, soemdsp::constant::kTAU);
-
-    double cosX = std::cos(angleX);
-    double sinX = std::sin(angleX);
-    double cosY = std::cos(angleY);
-    double sinY = std::sin(angleY);
-
-    // Process a block of audio/data variables and push to scope
-    for (int i = 0; i < runtime::steps_per_frame; ++i) {
-      attractor.run();
-
-      // Perform 3D to 2D projection rotation transforms
-      double x1 = attractor.x * cosY + attractor.z * sinY;
-      double z1 = -attractor.x * sinY + attractor.z * cosY;
-      double y1 = attractor.y;
-      double z_final = y1 * sinX + z1 * cosX;
-
-      // Push our custom transformed coordinates to the scope object
-      scope.pushSamplePair(x1, z_final);
+void handleKey(int key, Controls& controls) {
+    if (key == 'Z') {
+        controls.zoom = std::min(4.0, controls.zoom + 0.08);
+        controls.lastAdjustment = "zoom";
+        return;
     }
 
-    // Render out the frame string dynamically tracking label info
-    std::string currentFrame = scope.renderToString(angleX / soemdsp::constant::kTAU, angleY / soemdsp::constant::kTAU);
-    std::cout << currentFrame << std::flush;
+    const auto lower = static_cast<char>(std::tolower(key));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(runtime::refresh_ms));
-  }
-  return 0;
+    switch (lower) {
+    case 'q':
+    case 27:
+        controls.running = false;
+        break;
+    case ' ':
+        controls.paused = !controls.paused;
+        controls.lastAdjustment = controls.paused ? "pause" : "resume";
+        break;
+    case '0':
+        controls.mode = -1;
+        controls.lastAdjustment = "mode auto";
+        break;
+    case '1':
+        controls.mode = 0;
+        controls.lastAdjustment = "mode bloom";
+        break;
+    case '2':
+        controls.mode = 1;
+        controls.lastAdjustment = "mode tunnel";
+        break;
+    case '3':
+        controls.mode = 2;
+        controls.lastAdjustment = "mode particles";
+        break;
+    case '+':
+    case '=':
+        controls.speed = std::min(4.0, controls.speed + 0.15);
+        controls.lastAdjustment = "speed";
+        break;
+    case '-':
+    case '_':
+        controls.speed = std::max(0.15, controls.speed - 0.15);
+        controls.lastAdjustment = "speed";
+        break;
+    case ']':
+        controls.density = std::min(2.0, controls.density + 0.1);
+        controls.lastAdjustment = "density";
+        break;
+    case '[':
+        controls.density = std::max(0.25, controls.density - 0.1);
+        controls.lastAdjustment = "density";
+        break;
+    case '.':
+    case '>':
+        controls.fade = std::min(8, controls.fade + 1);
+        controls.lastAdjustment = "trail";
+        break;
+    case ',':
+    case '<':
+        controls.fade = std::max(1, controls.fade - 1);
+        controls.lastAdjustment = "trail";
+        break;
+    case 'z':
+        controls.zoom = std::max(0.25, controls.zoom - 0.08);
+        controls.lastAdjustment = "zoom";
+        break;
+    case 'c':
+        controls.color = !controls.color;
+        controls.lastAdjustment = "color";
+        break;
+    case 'x':
+    case 'r':
+        controls.clearRequested = true;
+        controls.lastAdjustment = "clear";
+        break;
+    case 'h':
+    case '?':
+        controls.help = !controls.help;
+        break;
+    default:
+        break;
+    }
+}
+
+void nudgeZoom(Controls& controls, int direction) {
+    const double ratio = direction > 0 ? 1.08 : 1.0 / 1.08;
+    controls.zoom = std::clamp(controls.zoom * ratio, 0.25, 4.0);
+    controls.lastAdjustment = "mousewheel zoom";
+}
+
+#ifdef _WIN32
+struct ConsoleInputState {
+    HANDLE input{ INVALID_HANDLE_VALUE };
+    DWORD originalMode{};
+    bool configured{};
+};
+
+ConsoleInputState configureConsoleInput() {
+    ConsoleInputState state;
+    state.input = GetStdHandle(STD_INPUT_HANDLE);
+    if (state.input == INVALID_HANDLE_VALUE) {
+        return state;
+    }
+
+    if (GetConsoleMode(state.input, &state.originalMode) == 0) {
+        return state;
+    }
+
+    DWORD mode = state.originalMode;
+    mode |= ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
+    mode &= ~ENABLE_QUICK_EDIT_MODE;
+
+    state.configured = SetConsoleMode(state.input, mode) != 0;
+    return state;
+}
+
+void restoreConsoleInput(const ConsoleInputState& state) {
+    if (state.configured) {
+        SetConsoleMode(state.input, state.originalMode);
+    }
+}
+#endif
+
+void pollControls(Controls& controls
+#ifdef _WIN32
+                  ,
+                  const ConsoleInputState& inputState
+#endif
+) {
+#ifdef _WIN32
+    if (inputState.configured) {
+        DWORD eventCount = 0;
+        while (GetNumberOfConsoleInputEvents(inputState.input, &eventCount) != 0 && eventCount > 0) {
+            INPUT_RECORD record{};
+            DWORD readCount = 0;
+            if (ReadConsoleInput(inputState.input, &record, 1, &readCount) == 0 || readCount == 0) {
+                break;
+            }
+
+            if (record.EventType == KEY_EVENT && record.Event.KeyEvent.bKeyDown) {
+                const char key = record.Event.KeyEvent.uChar.AsciiChar;
+                if (key != 0) {
+                    handleKey(key, controls);
+                } else {
+                    switch (record.Event.KeyEvent.wVirtualKeyCode) {
+                    case VK_UP:
+                        handleKey('+', controls);
+                        break;
+                    case VK_DOWN:
+                        handleKey('-', controls);
+                        break;
+                    case VK_RIGHT:
+                        handleKey(']', controls);
+                        break;
+                    case VK_LEFT:
+                        handleKey('[', controls);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            } else if (record.EventType == MOUSE_EVENT && record.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
+                const auto wheel = static_cast<short>(HIWORD(record.Event.MouseEvent.dwButtonState));
+                nudgeZoom(controls, wheel > 0 ? 1 : -1);
+            }
+        }
+
+        return;
+    }
+
+    while (_kbhit() != 0) {
+        int key = _getch();
+        if (key == 0 || key == 224) {
+            key = _getch();
+            switch (key) {
+            case 72:
+                handleKey('+', controls);
+                break;
+            case 80:
+                handleKey('-', controls);
+                break;
+            case 77:
+                handleKey(']', controls);
+                break;
+            case 75:
+                handleKey('[', controls);
+                break;
+            default:
+                break;
+            }
+        } else {
+            handleKey(key, controls);
+        }
+    }
+#endif
+}
+
+std::string footerFor(const Controls& controls) {
+    char footer[220]{};
+    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : "particles"));
+
+    if (controls.help) {
+        return "1/2/3 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  c color  r clear  q quit";
+    }
+
+    std::snprintf(
+      footer,
+      sizeof(footer),
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | color %s | last %s | h help | q quit",
+      controls.paused ? "PAUSED" : "LIVE",
+      mode,
+      controls.speed,
+      controls.density,
+      controls.zoom,
+      controls.fade,
+      controls.color ? "on" : "off",
+      controls.lastAdjustment.c_str());
+    return footer;
+}
+
+} // namespace
+
+int main(int argc, char** argv) {
+    std::ios::sync_with_stdio(false);
+
+    Controls controls;
+    controls.color = !hasArg(argc, argv, "--no-color");
+    const int frameLimit = hasArg(argc, argv, "--once") ? 90 : 0;
+
+    asciiscope::ConsoleRenderer renderer({ .width = 112, .height = 34, .maxAge = 13, .color = controls.color });
+    asciiscope::DemoSignalInput signalInput;
+    asciiscope::AnimationScene scene(renderer);
+
+#ifdef _WIN32
+    const auto inputState = configureConsoleInput();
+#endif
+
+    double visualFrame = 0.0;
+    int presentedFrames = 0;
+
+    while (controls.running && (frameLimit == 0 || presentedFrames < frameLimit)) {
+        pollControls(controls
+#ifdef _WIN32
+                     ,
+                     inputState
+#endif
+        );
+        renderer.setColor(controls.color);
+
+        if (controls.clearRequested) {
+            renderer.clear();
+            controls.clearRequested = false;
+        }
+
+        const int frame = static_cast<int>(visualFrame);
+        const auto sampleCount = static_cast<std::size_t>(std::clamp(5400.0 * controls.density, 1200.0, 10800.0));
+
+        if (!controls.paused) {
+            auto signalFrame = signalInput.nextFrame(static_cast<std::uint64_t>(frame), sampleCount);
+            asciiscope::SceneSettings settings{ .mode = controls.mode, .density = controls.density, .zoom = controls.zoom, .fade = controls.fade };
+            scene.draw(signalFrame, settings);
+            visualFrame += controls.speed;
+        }
+
+        renderer.present("ASCIISCOPE / SOEMDSP", scene.modeName(frame, controls.mode), footerFor(controls), frame);
+        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        ++presentedFrames;
+    }
+
+#ifdef _WIN32
+    restoreConsoleInput(inputState);
+#endif
+    renderer.restoreTerminal();
+    return 0;
 }
