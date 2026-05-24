@@ -37,6 +37,7 @@ Mouse wheel  zoom without clearing current trails
 z Z          keyboard zoom out / in
 < >          shorter or longer trails
 g            cycle glyph style
+p            cycle color palette
 c            toggle color
 r or x       clear trails
 h or ?       show control help
@@ -191,6 +192,7 @@ Options:
 .\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
 .\build\Release\asciiscope.exe --mode tunnel --glyphs dense
+.\build\Release\asciiscope.exe --mode particles --palette ember
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
@@ -209,6 +211,15 @@ classic
 dense
 blocks
 wire
+```
+
+Color palettes:
+
+```markdown
+neon
+ember
+acid
+ice
 ```
 
 Presets:

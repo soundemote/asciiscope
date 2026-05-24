@@ -102,6 +102,36 @@ std::optional<int> glyphStyleFromName(std::string_view style) {
     return std::nullopt;
 }
 
+std::string_view paletteName(int palette) {
+    switch (palette % 4) {
+    case 0:
+        return "neon";
+    case 1:
+        return "ember";
+    case 2:
+        return "acid";
+    default:
+        return "ice";
+    }
+}
+
+std::optional<int> paletteFromName(std::string_view palette) {
+    if (palette == "neon" || palette == "default") {
+        return 0;
+    }
+    if (palette == "ember" || palette == "fire") {
+        return 1;
+    }
+    if (palette == "acid" || palette == "green") {
+        return 2;
+    }
+    if (palette == "ice" || palette == "blue") {
+        return 3;
+    }
+
+    return std::nullopt;
+}
+
 std::optional<int> positiveIntValue(int argc, char** argv, std::string_view target) {
     const auto value = argValue(argc, argv, target);
     if (!value.has_value() || value->empty()) {
@@ -181,6 +211,7 @@ void printHelp() {
       << "  --zoom N               visual zoom, 0.25 to 4.0\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
+      << "  --palette NAME         neon | ember | acid | ice\n"
       << "  --title TEXT           title shown in the header\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
@@ -201,6 +232,7 @@ struct Controls {
     double zoom{ 1.0 };
     int fade{ 2 };
     int glyphStyle{ 0 };
+    int palette{ 0 };
     bool clearRequested{ false };
     std::string lastAdjustment{ "ready" };
     std::string inputStatus{ "input pending" };
@@ -323,6 +355,10 @@ void handleKey(int key, Controls& controls) {
     case 'g':
         controls.glyphStyle = (controls.glyphStyle + 1) % 4;
         controls.lastAdjustment = "glyphs";
+        break;
+    case 'p':
+        controls.palette = (controls.palette + 1) % 4;
+        controls.lastAdjustment = "palette";
         break;
     case 'x':
     case 'r':
@@ -458,14 +494,14 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
 
     if (controls.help) {
-        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  g glyphs  c color  r clear  q quit";
+        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  g glyphs  p palette  c color  r clear  q quit";
     }
 
     if (stats.has_value()) {
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | %s glyphs | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -473,6 +509,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           controls.zoom,
           controls.fade,
           glyphStyleName(controls.glyphStyle).data(),
+          paletteName(controls.palette).data(),
           stats->rms,
           stats->peak,
           stats->min,
@@ -485,7 +522,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | %s glyphs | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -493,6 +530,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       controls.zoom,
       controls.fade,
       glyphStyleName(controls.glyphStyle).data(),
+      paletteName(controls.palette).data(),
       controls.color ? "on" : "off",
       controls.inputStatus.c_str(),
       controls.lastAdjustment.c_str());
@@ -534,6 +572,12 @@ int main(int argc, char** argv) {
         if (const auto glyphStyle = glyphStyleFromName(*glyphArg)) {
             controls.glyphStyle = *glyphStyle;
             controls.lastAdjustment = "glyphs cli";
+        }
+    }
+    if (const auto paletteArg = argValue(argc, argv, "--palette")) {
+        if (const auto palette = paletteFromName(*paletteArg)) {
+            controls.palette = *palette;
+            controls.lastAdjustment = "palette cli";
         }
     }
     if (const auto modeArg = argValue(argc, argv, "--mode")) {
@@ -578,6 +622,7 @@ int main(int argc, char** argv) {
         );
         renderer.setColor(controls.color);
         renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
+        renderer.setPalette(controls.palette);
 
         if (controls.clearRequested) {
             renderer.clear();

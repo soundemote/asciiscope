@@ -18,9 +18,41 @@ namespace asciiscope {
 namespace {
 
 #ifdef _WIN32
-WORD attributeForAge(std::uint8_t age, int maxAge, bool color) {
+WORD attributeForAge(std::uint8_t age, int maxAge, bool color, int palette) {
     if (!color) {
         return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    }
+
+    const int band = age > maxAge * 3 / 4 ? 3 : (age > maxAge / 2 ? 2 : (age > maxAge / 4 ? 1 : 0));
+
+    if (palette % 4 == 1) {
+        constexpr WORD ember[] = {
+            FOREGROUND_RED,
+            FOREGROUND_RED | FOREGROUND_INTENSITY,
+            FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+            FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        };
+        return ember[band];
+    }
+
+    if (palette % 4 == 2) {
+        constexpr WORD acid[] = {
+            FOREGROUND_GREEN,
+            FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+            FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+            FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        };
+        return acid[band];
+    }
+
+    if (palette % 4 == 3) {
+        constexpr WORD ice[] = {
+            FOREGROUND_BLUE,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY,
+            FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY,
+            FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY,
+        };
+        return ice[band];
     }
 
     if (age > maxAge * 3 / 4) {
@@ -191,7 +223,7 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
             const auto age = cells_[static_cast<std::size_t>(index(x, y))];
             const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + 1);
             buffer[outIndex].Char.AsciiChar = age == 0 ? ' ' : glyphFor(age);
-            buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color);
+            buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color, config_.palette);
         }
     }
 
@@ -240,6 +272,23 @@ char ConsoleRenderer::glyphFor(std::uint8_t age) const noexcept {
 }
 
 std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
+    const int band = age > config_.maxAge * 3 / 4 ? 3 : (age > config_.maxAge / 2 ? 2 : (age > config_.maxAge / 4 ? 1 : 0));
+
+    if (config_.palette % 4 == 1) {
+        constexpr std::string_view ember[] = { "\x1b[0;31m", "\x1b[1;31m", "\x1b[1;33m", "\x1b[1;97m" };
+        return std::string(ember[band]);
+    }
+
+    if (config_.palette % 4 == 2) {
+        constexpr std::string_view acid[] = { "\x1b[0;32m", "\x1b[1;32m", "\x1b[1;33m", "\x1b[1;97m" };
+        return std::string(acid[band]);
+    }
+
+    if (config_.palette % 4 == 3) {
+        constexpr std::string_view ice[] = { "\x1b[0;34m", "\x1b[1;36m", "\x1b[1;37m", "\x1b[1;97m" };
+        return std::string(ice[band]);
+    }
+
     if (age > config_.maxAge * 3 / 4) {
         return "\x1b[1;97m";
     }
