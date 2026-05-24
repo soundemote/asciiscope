@@ -1,7 +1,7 @@
 ---
 #BasedOnStyle: LLVM
 SortIncludes: CaseSensitive
-IncludeBlocks: Regroup
+IncludeBlocks: Merge
 
 IncludeCategories:
   # 3. local files
@@ -29,7 +29,8 @@ AlignConsecutiveBitFields: None
 AlignConsecutiveDeclarations: None
 AlignEscapedNewlines: Right
 AlignOperands: Align
-AlignTrailingComments: true
+AlignTrailingComments:
+  Kind: Leave
 AllowAllArgumentsOnNextLine: true
 AllowAllParametersOfDeclarationOnNextLine: false
 AllowShortEnumsOnASingleLine: false
@@ -71,6 +72,7 @@ BreakBeforeConceptDeclarations: true
 BreakBeforeInheritanceComma: false
 BreakInheritanceList: BeforeComma
 BreakBeforeTernaryOperators: true
+BreakBeforeBraces: Allman
 
 # Constructor initializer lists
 PackConstructorInitializers: Never
@@ -169,8 +171,8 @@ SpacesInConditionalStatement: false
 SpacesInContainerLiterals: true
 SpacesInCStyleCastParentheses: false
 SpacesInLineCommentPrefix:
-  Minimum: 1
-  Maximum: -1
+  Minimum: 0
+  Maximum: 0
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 SpaceBeforeSquareBrackets: false
