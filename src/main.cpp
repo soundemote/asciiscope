@@ -73,6 +73,14 @@ std::optional<int> positiveIntValue(int argc, char** argv, std::string_view targ
     return static_cast<int>(parsed);
 }
 
+int boundedIntOption(int argc, char** argv, std::string_view target, int fallback, int minimum, int maximum) {
+    if (const auto value = positiveIntValue(argc, argv, target)) {
+        return std::clamp(*value, minimum, maximum);
+    }
+
+    return fallback;
+}
+
 struct Controls {
     bool running{ true };
     bool paused{ false };
@@ -352,8 +360,10 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
+    const int width = boundedIntOption(argc, argv, "--width", 112, 40, 220);
+    const int height = boundedIntOption(argc, argv, "--height", 34, 16, 80);
 
-    asciiscope::ConsoleRenderer renderer({ .width = 112, .height = 34, .maxAge = 13, .color = controls.color });
+    asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 13, .color = controls.color });
     asciiscope::DemoSignalInput signalInput;
     asciiscope::AnimationScene scene(renderer);
 

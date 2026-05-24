@@ -184,6 +184,7 @@ Options:
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
+.\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal
