@@ -184,8 +184,8 @@ Options:
 .\build\Release\asciiscope.exe --once
 ```
 
-The footer shows the current mode, speed, density, zoom, trail amount, color
-state, pause state, and last adjusted control.
+The footer shows the current mode, speed, density, zoom, trail amount, signal
+RMS/peak/min/max, pause state, and last adjusted control.
 
 ## future
 

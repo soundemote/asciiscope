@@ -241,12 +241,31 @@ void pollControls(Controls& controls
 #endif
 }
 
-std::string footerFor(const Controls& controls) {
-    char footer[220]{};
+std::string footerFor(const Controls& controls, const std::optional<asciiscope::SignalStats>& stats) {
+    char footer[280]{};
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : "particles"));
 
     if (controls.help) {
         return "1/2/3 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  c color  r clear  q quit";
+    }
+
+    if (stats.has_value()) {
+        std::snprintf(
+          footer,
+          sizeof(footer),
+          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | sig rms %.2f pk %.2f min %.2f max %.2f | last %s | h help",
+          controls.paused ? "PAUSED" : "LIVE",
+          mode,
+          controls.speed,
+          controls.density,
+          controls.zoom,
+          controls.fade,
+          stats->rms,
+          stats->peak,
+          stats->min,
+          stats->max,
+          controls.lastAdjustment.c_str());
+        return footer;
     }
 
     std::snprintf(
@@ -281,6 +300,7 @@ int main(int argc, char** argv) {
     const auto inputState = configureConsoleInput();
 #endif
 
+    std::optional<asciiscope::SignalStats> latestStats;
     double visualFrame = 0.0;
     int presentedFrames = 0;
 
@@ -303,12 +323,15 @@ int main(int argc, char** argv) {
 
         if (!controls.paused) {
             auto signalFrame = signalInput.nextFrame(static_cast<std::uint64_t>(frame), sampleCount);
+            if (const auto* source = signalFrame.findSource("main")) {
+                latestStats = source->stats;
+            }
             asciiscope::SceneSettings settings{ .mode = controls.mode, .density = controls.density, .zoom = controls.zoom, .fade = controls.fade };
             scene.draw(signalFrame, settings);
             visualFrame += controls.speed;
         }
 
-        renderer.present("ASCIISCOPE / SOEMDSP", scene.modeName(frame, controls.mode), footerFor(controls), frame);
+        renderer.present("ASCIISCOPE / SOEMDSP", scene.modeName(frame, controls.mode), footerFor(controls, latestStats), frame);
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
         ++presentedFrames;
     }

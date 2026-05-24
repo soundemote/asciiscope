@@ -195,7 +195,7 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
         }
     }
 
-    writeTextToBuffer(buffer, outWidth, 0, config_.height + 3, footer, FOREGROUND_INTENSITY);
+    writeTextToBuffer(buffer, outWidth, 0, config_.height + 3, footer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 
     COORD bufferSize{ static_cast<SHORT>(outWidth), static_cast<SHORT>(outHeight) };
     COORD bufferCoord{ 0, 0 };
