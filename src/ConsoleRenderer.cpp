@@ -141,17 +141,22 @@ void ConsoleRenderer::writeText(int x, int y, std::string_view text, std::uint8_
 std::string ConsoleRenderer::render(std::string_view title, std::string_view mode, std::string_view footer, int frame) const {
     std::ostringstream out;
     out << "\x1b[?25l\x1b[H";
-    out << "\x1b[1;37m" << title << "\x1b[0m"
-        << "  \x1b[36m" << mode << "\x1b[0m"
-        << "  \x1b[90mframe " << std::setw(5) << frame << "\x1b[0m\n";
 
-    for (int x = 0; x < config_.width + 2; ++x) {
-        out << (x == 0 || x == config_.width + 1 ? '+' : '-');
+    if (config_.chrome) {
+        out << "\x1b[1;37m" << title << "\x1b[0m"
+            << "  \x1b[36m" << mode << "\x1b[0m"
+            << "  \x1b[90mframe " << std::setw(5) << frame << "\x1b[0m\n";
+
+        for (int x = 0; x < config_.width + 2; ++x) {
+            out << (x == 0 || x == config_.width + 1 ? '+' : '-');
+        }
+        out << '\n';
     }
-    out << '\n';
 
     for (int y = 0; y < config_.height; ++y) {
-        out << '|';
+        if (config_.chrome) {
+            out << '|';
+        }
         for (int x = 0; x < config_.width; ++x) {
             const auto age = cells_[static_cast<std::size_t>(index(x, y))];
             if (age == 0) {
@@ -162,13 +167,18 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
                 out << glyphFor(age);
             }
         }
-        out << "|\n";
+        if (config_.chrome) {
+            out << '|';
+        }
+        out << '\n';
     }
 
-    for (int x = 0; x < config_.width + 2; ++x) {
-        out << (x == 0 || x == config_.width + 1 ? '+' : '-');
+    if (config_.chrome) {
+        for (int x = 0; x < config_.width + 2; ++x) {
+            out << (x == 0 || x == config_.width + 1 ? '+' : '-');
+        }
+        out << "\n\x1b[90m" << footer << "\x1b[0m\n";
     }
-    out << "\n\x1b[90m" << footer << "\x1b[0m\n";
     return out.str();
 }
 
@@ -195,39 +205,47 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
         cell.Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
     }
 
-    char header[160]{};
-    std::snprintf(header, sizeof(header), "%.*s  %.*s  frame %5d",
-                  static_cast<int>(title.size()), title.data(),
-                  static_cast<int>(mode.size()), mode.data(),
-                  frame);
-    writeTextToBuffer(buffer, outWidth, 0, 0, header, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    if (config_.chrome) {
+        char header[160]{};
+        std::snprintf(header, sizeof(header), "%.*s  %.*s  frame %5d",
+                      static_cast<int>(title.size()), title.data(),
+                      static_cast<int>(mode.size()), mode.data(),
+                      frame);
+        writeTextToBuffer(buffer, outWidth, 0, 0, header, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 
-    for (int x = 0; x < outWidth; ++x) {
-        const bool corner = x == 0 || x == outWidth - 1;
-        buffer[static_cast<std::size_t>(x + outWidth)].Char.AsciiChar = corner ? '+' : '-';
-        buffer[static_cast<std::size_t>(x + outWidth)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        for (int x = 0; x < outWidth; ++x) {
+            const bool corner = x == 0 || x == outWidth - 1;
+            buffer[static_cast<std::size_t>(x + outWidth)].Char.AsciiChar = corner ? '+' : '-';
+            buffer[static_cast<std::size_t>(x + outWidth)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
 
-        const auto bottom = static_cast<std::size_t>((config_.height + 2) * outWidth + x);
-        buffer[bottom].Char.AsciiChar = corner ? '+' : '-';
-        buffer[bottom].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+            const auto bottom = static_cast<std::size_t>((config_.height + 2) * outWidth + x);
+            buffer[bottom].Char.AsciiChar = corner ? '+' : '-';
+            buffer[bottom].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        }
     }
 
     for (int y = 0; y < config_.height; ++y) {
-        const int outY = y + 2;
-        buffer[static_cast<std::size_t>(outY * outWidth)].Char.AsciiChar = '|';
-        buffer[static_cast<std::size_t>(outY * outWidth)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
-        buffer[static_cast<std::size_t>(outY * outWidth + outWidth - 1)].Char.AsciiChar = '|';
-        buffer[static_cast<std::size_t>(outY * outWidth + outWidth - 1)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        const int outY = config_.chrome ? y + 2 : y;
+        const int outX = config_.chrome ? 1 : 0;
+
+        if (config_.chrome) {
+            buffer[static_cast<std::size_t>(outY * outWidth)].Char.AsciiChar = '|';
+            buffer[static_cast<std::size_t>(outY * outWidth)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+            buffer[static_cast<std::size_t>(outY * outWidth + outWidth - 1)].Char.AsciiChar = '|';
+            buffer[static_cast<std::size_t>(outY * outWidth + outWidth - 1)].Attributes = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+        }
 
         for (int x = 0; x < config_.width; ++x) {
             const auto age = cells_[static_cast<std::size_t>(index(x, y))];
-            const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + 1);
+            const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + outX);
             buffer[outIndex].Char.AsciiChar = age == 0 ? ' ' : glyphFor(age);
             buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color, config_.palette);
         }
     }
 
-    writeTextToBuffer(buffer, outWidth, 0, config_.height + 3, footer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    if (config_.chrome) {
+        writeTextToBuffer(buffer, outWidth, 0, config_.height + 3, footer, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+    }
 
     COORD bufferSize{ static_cast<SHORT>(outWidth), static_cast<SHORT>(outHeight) };
     COORD bufferCoord{ 0, 0 };

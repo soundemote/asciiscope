@@ -213,6 +213,7 @@ void printHelp() {
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"
       << "  --title TEXT           title shown in the header\n"
+      << "  --canvas-only          hide header, border, and footer\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
       << "Examples:\n"
@@ -553,6 +554,7 @@ int main(int argc, char** argv) {
     int height = 34;
     std::uint32_t seed = 0xA5C115C0;
     bool showHud = !hasArg(argc, argv, "--no-hud");
+    bool showChrome = !hasArg(argc, argv, "--canvas-only");
     std::string title = "ASCIISCOPE / SOEMDSP";
 
     if (const auto titleArg = argValue(argc, argv, "--title")) {
@@ -621,6 +623,7 @@ int main(int argc, char** argv) {
 #endif
         );
         renderer.setColor(controls.color);
+        renderer.setChrome(showChrome);
         renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
         renderer.setPalette(controls.palette);
 
@@ -642,7 +645,7 @@ int main(int argc, char** argv) {
             visualFrame += controls.speed;
         }
 
-        const std::string footer = showHud ? footerFor(controls, latestStats) : std::string{};
+        const std::string footer = showHud && showChrome ? footerFor(controls, latestStats) : std::string{};
         renderer.present(title, scene.modeName(frame, controls.mode), footer, frame);
         std::this_thread::sleep_for(frameDelay);
         ++presentedFrames;

@@ -193,6 +193,7 @@ Options:
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
 .\build\Release\asciiscope.exe --mode tunnel --glyphs dense
 .\build\Release\asciiscope.exe --mode particles --palette ember
+.\build\Release\asciiscope.exe --preset ghost-spectral --canvas-only --fps 30
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
@@ -203,6 +204,8 @@ RMS/peak/min/max, glyph style, input backend, pause state, and last adjusted
 control.
 
 `--seed` accepts decimal or `0x` hex values for repeatable demo takes.
+
+`--canvas-only` hides the title, border, and footer for clean OBS crops.
 
 Glyph styles:
 
