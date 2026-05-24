@@ -186,10 +186,21 @@ Options:
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
+.\build\Release\asciiscope.exe --preset neon-tunnel
+.\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal
 RMS/peak/min/max, input backend, pause state, and last adjusted control.
+
+Presets:
+
+```markdown
+bloom-reel
+neon-tunnel
+particle-storm
+ghost-spectral
+```
 
 ## future
 

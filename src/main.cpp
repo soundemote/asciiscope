@@ -119,6 +119,46 @@ struct Controls {
     std::string inputStatus{ "input pending" };
 };
 
+bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, int& width, int& height) {
+    frameLimit = 240;
+
+    if (preset == "bloom-reel" || preset == "bloom") {
+        controls.mode = 0;
+        controls.speed = 1.1;
+        controls.density = 1.2;
+        controls.zoom = 1.1;
+        controls.fade = 2;
+    } else if (preset == "neon-tunnel" || preset == "tunnel") {
+        controls.mode = 1;
+        controls.speed = 1.2;
+        controls.density = 1.1;
+        controls.zoom = 1.15;
+        controls.fade = 2;
+        width = 120;
+        height = 36;
+    } else if (preset == "particle-storm" || preset == "particles") {
+        controls.mode = 2;
+        controls.speed = 1.4;
+        controls.density = 1.6;
+        controls.zoom = 1.25;
+        controls.fade = 3;
+    } else if (preset == "ghost-spectral" || preset == "spectral") {
+        controls.mode = 3;
+        controls.speed = 0.85;
+        controls.density = 1.25;
+        controls.zoom = 1.0;
+        controls.fade = 4;
+        width = 128;
+        height = 36;
+    } else {
+        frameLimit = 0;
+        return false;
+    }
+
+    controls.lastAdjustment = "preset";
+    return true;
+}
+
 void handleKey(int key, Controls& controls) {
     if (key == 'Z') {
         controls.zoom = std::min(4.0, controls.zoom + 0.08);
@@ -372,6 +412,14 @@ int main(int argc, char** argv) {
     std::ios::sync_with_stdio(false);
 
     Controls controls;
+    int frameLimit = 0;
+    int width = 112;
+    int height = 34;
+
+    if (const auto preset = argValue(argc, argv, "--preset")) {
+        applyPreset(*preset, controls, frameLimit, width, height);
+    }
+
     controls.color = !hasArg(argc, argv, "--no-color");
     controls.speed = boundedDoubleOption(argc, argv, "--speed", controls.speed, 0.15, 4.0);
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
@@ -383,12 +431,14 @@ int main(int argc, char** argv) {
             controls.lastAdjustment = "mode cli";
         }
     }
-    int frameLimit = hasArg(argc, argv, "--once") ? 90 : 0;
+    if (hasArg(argc, argv, "--once")) {
+        frameLimit = 90;
+    }
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
-    const int width = boundedIntOption(argc, argv, "--width", 112, 40, 220);
-    const int height = boundedIntOption(argc, argv, "--height", 34, 16, 80);
+    width = boundedIntOption(argc, argv, "--width", width, 40, 220);
+    height = boundedIntOption(argc, argv, "--height", height, 16, 80);
 
     asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 13, .color = controls.color });
     asciiscope::DemoSignalInput signalInput;
