@@ -42,6 +42,7 @@ struct Controls {
     int fade{ 2 };
     bool clearRequested{ false };
     std::string lastAdjustment{ "ready" };
+    std::string inputStatus{ "input pending" };
 };
 
 void handleKey(int key, Controls& controls) {
@@ -153,8 +154,8 @@ ConsoleInputState configureConsoleInput() {
     }
 
     DWORD mode = state.originalMode;
-    mode |= ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS;
-    mode &= ~ENABLE_QUICK_EDIT_MODE;
+    mode |= ENABLE_MOUSE_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_WINDOW_INPUT;
+    mode &= ~(ENABLE_QUICK_EDIT_MODE | ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
 
     state.configured = SetConsoleMode(state.input, mode) != 0;
     return state;
@@ -175,6 +176,7 @@ void pollControls(Controls& controls
 ) {
 #ifdef _WIN32
     if (inputState.configured) {
+        controls.inputStatus = "input win32";
         DWORD eventCount = 0;
         while (GetNumberOfConsoleInputEvents(inputState.input, &eventCount) != 0 && eventCount > 0) {
             INPUT_RECORD record{};
@@ -214,6 +216,7 @@ void pollControls(Controls& controls
         return;
     }
 
+    controls.inputStatus = "input kbhit";
     while (_kbhit() != 0) {
         int key = _getch();
         if (key == 0 || key == 224) {
@@ -253,7 +256,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | sig rms %.2f pk %.2f min %.2f max %.2f | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -264,6 +267,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           stats->peak,
           stats->min,
           stats->max,
+          controls.inputStatus.c_str(),
           controls.lastAdjustment.c_str());
         return footer;
     }
@@ -271,7 +275,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | color %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -279,6 +283,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       controls.zoom,
       controls.fade,
       controls.color ? "on" : "off",
+      controls.inputStatus.c_str(),
       controls.lastAdjustment.c_str());
     return footer;
 }

@@ -185,7 +185,7 @@ Options:
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal
-RMS/peak/min/max, pause state, and last adjusted control.
+RMS/peak/min/max, input backend, pause state, and last adjusted control.
 
 ## future
 
