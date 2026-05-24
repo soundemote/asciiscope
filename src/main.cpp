@@ -81,6 +81,29 @@ int boundedIntOption(int argc, char** argv, std::string_view target, int fallbac
     return fallback;
 }
 
+std::optional<double> doubleValue(int argc, char** argv, std::string_view target) {
+    const auto value = argValue(argc, argv, target);
+    if (!value.has_value() || value->empty()) {
+        return std::nullopt;
+    }
+
+    char* end{};
+    const auto parsed = std::strtod(value->data(), &end);
+    if (end == value->data() || *end != '\0') {
+        return std::nullopt;
+    }
+
+    return parsed;
+}
+
+double boundedDoubleOption(int argc, char** argv, std::string_view target, double fallback, double minimum, double maximum) {
+    if (const auto value = doubleValue(argc, argv, target)) {
+        return std::clamp(*value, minimum, maximum);
+    }
+
+    return fallback;
+}
+
 struct Controls {
     bool running{ true };
     bool paused{ false };
@@ -350,6 +373,10 @@ int main(int argc, char** argv) {
 
     Controls controls;
     controls.color = !hasArg(argc, argv, "--no-color");
+    controls.speed = boundedDoubleOption(argc, argv, "--speed", controls.speed, 0.15, 4.0);
+    controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
+    controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, 0.25, 4.0);
+    controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
     if (const auto modeArg = argValue(argc, argv, "--mode")) {
         if (const auto mode = modeFromName(*modeArg)) {
             controls.mode = *mode;
