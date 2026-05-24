@@ -180,6 +180,7 @@ cmake --build build --config Release
 Options:
 
 ```powershell
+.\build\Release\asciiscope.exe --help
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode spectral

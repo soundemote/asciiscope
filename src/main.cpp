@@ -104,6 +104,28 @@ double boundedDoubleOption(int argc, char** argv, std::string_view target, doubl
     return fallback;
 }
 
+void printHelp() {
+    std::cout
+      << "asciiscope - terminal-native signal visuals\n\n"
+      << "Options:\n"
+      << "  --help                 show this help\n"
+      << "  --once                 run a short 90-frame smoke demo\n"
+      << "  --frames N             run exactly N frames\n"
+      << "  --mode NAME            bloom | tunnel | particles | spectral\n"
+      << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
+      << "  --width N              canvas width, 40 to 220\n"
+      << "  --height N             canvas height, 16 to 80\n"
+      << "  --speed N              visual speed, 0.15 to 4.0\n"
+      << "  --density N            signal density, 0.25 to 2.0\n"
+      << "  --zoom N               visual zoom, 0.25 to 4.0\n"
+      << "  --trail N              trail fade amount, 1 to 8\n"
+      << "  --no-color             monochrome output\n\n"
+      << "Examples:\n"
+      << "  asciiscope --preset neon-tunnel\n"
+      << "  asciiscope --preset particle-storm --zoom 1.6\n"
+      << "  asciiscope --mode spectral --frames 240\n";
+}
+
 struct Controls {
     bool running{ true };
     bool paused{ false };
@@ -410,6 +432,11 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
 
 int main(int argc, char** argv) {
     std::ios::sync_with_stdio(false);
+
+    if (hasArg(argc, argv, "--help") || hasArg(argc, argv, "-h")) {
+        printHelp();
+        return 0;
+    }
 
     Controls controls;
     int frameLimit = 0;
