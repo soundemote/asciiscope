@@ -10,7 +10,7 @@ https://mit-license.org/
 📺 console renderer : dark terminal phosphor, colored glyph trails
 〰️ signal frames    : renderer-neutral visual input
 🌀 demo signals     : soemdsp phasors, attractors, envelopes, noise
-🌃 visual modes     : bloom, tunnel, particle field
+🌃 visual modes     : bloom, tunnel, particle field, spectral ribbon
 🎛️ future input     : synths, plugins, sandbox probes, live signal buses
 ```
 
@@ -26,7 +26,7 @@ cmd /k "cd /d C:\Users\argit\Desktop\asciiscope && build\Release\asciiscope.exe"
 ## live controls
 
 ```markdown
-1 2 3        lock bloom / tunnel / particle mode
+1 2 3 4      lock bloom / tunnel / particle / spectral mode
 0            return to automatic mode rotation
 Space        pause or resume
 + -          speed up or slow down
@@ -182,6 +182,7 @@ Options:
 ```powershell
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
+.\build\Release\asciiscope.exe --mode spectral
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal

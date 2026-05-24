@@ -36,8 +36,11 @@ void AnimationScene::draw(const SignalFrame& frame, const SceneSettings& setting
     case 1:
         drawWaveTunnel(frame, *source, settings);
         break;
-    default:
+    case 2:
         drawParticleField(frame, *source, settings);
+        break;
+    default:
+        drawSpectralRibbon(frame, *source, settings);
         break;
     }
 }
@@ -48,17 +51,19 @@ std::string_view AnimationScene::modeName(int frame, int overrideMode) const noe
         return "multi-sprott bloom";
     case 1:
         return "phasor wave tunnel";
-    default:
+    case 2:
         return "pluck/noise particle field";
+    default:
+        return "spectral ribbon";
     }
 }
 
 int AnimationScene::activeMode(int frame, int overrideMode) const noexcept {
     if (overrideMode >= 0) {
-        return overrideMode % 3;
+        return overrideMode % 4;
     }
 
-    return (frame / 260) % 3;
+    return (frame / 240) % 4;
 }
 
 void AnimationScene::drawAttractorBloom(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
@@ -108,6 +113,29 @@ void AnimationScene::drawParticleField(const SignalFrame& frame, const SignalSou
         const double x = std::cos(angle) * radial + shear * 0.35;
         const double y = std::sin(angle * 0.73 + s.lfo) * radial * 0.55 + s.noise * 0.035;
         renderer_.plot(x * settings.zoom, y * settings.zoom, 0.24 + s.pulse + std::abs(s.noise) * 0.35);
+    }
+}
+
+void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
+    const double scan = frame.timeSeconds * 0.72;
+    const double width = static_cast<double>(renderer_.width() - 1);
+    const double height = static_cast<double>(renderer_.height() - 1);
+    const int columns = renderer_.width();
+
+    for (int x = 0; x < columns; ++x) {
+        const double bin = static_cast<double>(x) / static_cast<double>(std::max(1, columns - 1));
+        const auto& s = sampleAt(source, static_cast<std::size_t>(x * 47 + static_cast<int>(frame.frameIndex) * 13));
+        const double folded = std::abs(std::sin((bin * 7.0 + s.phase + scan * 0.23) * soemdsp::constant::kTAU));
+        const double motion = std::sin((bin * 2.0 + scan + s.lfo * 0.12) * soemdsp::constant::kTAU) * 0.18;
+        const double energy = std::clamp((s.pulse * 0.72 + folded * 0.34 + std::abs(s.noise) * 0.18) * settings.zoom, 0.02, 1.0);
+        const int bar = std::clamp(static_cast<int>(energy * height * 0.78), 1, renderer_.height());
+
+        for (int y = 0; y < bar; ++y) {
+            const double rise = static_cast<double>(y) / std::max(1.0, height);
+            const double px = (static_cast<double>(x) / width) * 2.0 - 1.0;
+            const double py = -0.88 + rise * 1.58 + motion * (1.0 - rise);
+            renderer_.plot(px, py, 0.20 + energy * 0.9 - rise * 0.18);
+        }
     }
 }
 

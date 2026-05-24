@@ -30,6 +30,33 @@ bool hasArg(int argc, char** argv, std::string_view target) {
     return false;
 }
 
+std::optional<std::string_view> argValue(int argc, char** argv, std::string_view target) {
+    for (int i = 1; i + 1 < argc; ++i) {
+        if (argv[i] == target) {
+            return argv[i + 1];
+        }
+    }
+
+    return std::nullopt;
+}
+
+std::optional<int> modeFromName(std::string_view mode) {
+    if (mode == "1" || mode == "bloom") {
+        return 0;
+    }
+    if (mode == "2" || mode == "tunnel") {
+        return 1;
+    }
+    if (mode == "3" || mode == "particles" || mode == "particle") {
+        return 2;
+    }
+    if (mode == "4" || mode == "spectral" || mode == "ribbon") {
+        return 3;
+    }
+
+    return std::nullopt;
+}
+
 struct Controls {
     bool running{ true };
     bool paused{ false };
@@ -78,6 +105,10 @@ void handleKey(int key, Controls& controls) {
     case '3':
         controls.mode = 2;
         controls.lastAdjustment = "mode particles";
+        break;
+    case '4':
+        controls.mode = 3;
+        controls.lastAdjustment = "mode spectral";
         break;
     case '+':
     case '=':
@@ -246,10 +277,10 @@ void pollControls(Controls& controls
 
 std::string footerFor(const Controls& controls, const std::optional<asciiscope::SignalStats>& stats) {
     char footer[280]{};
-    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : "particles"));
+    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
 
     if (controls.help) {
-        return "1/2/3 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  c color  r clear  q quit";
+        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  c color  r clear  q quit";
     }
 
     if (stats.has_value()) {
@@ -295,6 +326,12 @@ int main(int argc, char** argv) {
 
     Controls controls;
     controls.color = !hasArg(argc, argv, "--no-color");
+    if (const auto modeArg = argValue(argc, argv, "--mode")) {
+        if (const auto mode = modeFromName(*modeArg)) {
+            controls.mode = *mode;
+            controls.lastAdjustment = "mode cli";
+        }
+    }
     const int frameLimit = hasArg(argc, argv, "--once") ? 90 : 0;
 
     asciiscope::ConsoleRenderer renderer({ .width = 112, .height = 34, .maxAge = 13, .color = controls.color });
