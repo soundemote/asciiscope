@@ -3,6 +3,7 @@
 #include <cctype>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <iostream>
 #include <optional>
 #include <string_view>
@@ -55,6 +56,21 @@ std::optional<int> modeFromName(std::string_view mode) {
     }
 
     return std::nullopt;
+}
+
+std::optional<int> positiveIntValue(int argc, char** argv, std::string_view target) {
+    const auto value = argValue(argc, argv, target);
+    if (!value.has_value() || value->empty()) {
+        return std::nullopt;
+    }
+
+    char* end{};
+    const auto parsed = std::strtol(value->data(), &end, 10);
+    if (end == value->data() || *end != '\0' || parsed <= 0) {
+        return std::nullopt;
+    }
+
+    return static_cast<int>(parsed);
 }
 
 struct Controls {
@@ -332,7 +348,10 @@ int main(int argc, char** argv) {
             controls.lastAdjustment = "mode cli";
         }
     }
-    const int frameLimit = hasArg(argc, argv, "--once") ? 90 : 0;
+    int frameLimit = hasArg(argc, argv, "--once") ? 90 : 0;
+    if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
+        frameLimit = *frames;
+    }
 
     asciiscope::ConsoleRenderer renderer({ .width = 112, .height = 34, .maxAge = 13, .color = controls.color });
     asciiscope::DemoSignalInput signalInput;

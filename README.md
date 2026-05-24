@@ -183,6 +183,7 @@ Options:
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode spectral
+.\build\Release\asciiscope.exe --mode spectral --frames 240
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal
