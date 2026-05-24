@@ -119,6 +119,8 @@ void printHelp() {
       << "  --density N            signal density, 0.25 to 2.0\n"
       << "  --zoom N               visual zoom, 0.25 to 4.0\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
+      << "  --title TEXT           title shown in the header\n"
+      << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
@@ -442,6 +444,12 @@ int main(int argc, char** argv) {
     int frameLimit = 0;
     int width = 112;
     int height = 34;
+    bool showHud = !hasArg(argc, argv, "--no-hud");
+    std::string title = "ASCIISCOPE / SOEMDSP";
+
+    if (const auto titleArg = argValue(argc, argv, "--title")) {
+        title = std::string(*titleArg);
+    }
 
     if (const auto preset = argValue(argc, argv, "--preset")) {
         applyPreset(*preset, controls, frameLimit, width, height);
@@ -506,7 +514,8 @@ int main(int argc, char** argv) {
             visualFrame += controls.speed;
         }
 
-        renderer.present("ASCIISCOPE / SOEMDSP", scene.modeName(frame, controls.mode), footerFor(controls, latestStats), frame);
+        const std::string footer = showHud ? footerFor(controls, latestStats) : std::string{};
+        renderer.present(title, scene.modeName(frame, controls.mode), footer, frame);
         std::this_thread::sleep_for(std::chrono::milliseconds(16));
         ++presentedFrames;
     }

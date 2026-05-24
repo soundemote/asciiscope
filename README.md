@@ -189,6 +189,7 @@ Options:
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
+.\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
 ```
 
 The footer shows the current mode, speed, density, zoom, trail amount, signal
