@@ -14,6 +14,7 @@ class ConsoleRenderer {
         int height{ 34 };
         int maxAge{ 13 };
         bool color{ true };
+        std::string glyphRamp{ " .:-=+*#%@" };
     };
 
     explicit ConsoleRenderer(Config config = {});
@@ -27,6 +28,7 @@ class ConsoleRenderer {
     void present(std::string_view title, std::string_view mode, std::string_view footer, int frame) const;
     void restoreTerminal() const;
     void setColor(bool enabled) noexcept { config_.color = enabled; }
+    void setGlyphRamp(std::string_view glyphRamp);
 
     [[nodiscard]] int width() const noexcept { return config_.width; }
     [[nodiscard]] int height() const noexcept { return config_.height; }

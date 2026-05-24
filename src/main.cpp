@@ -58,6 +58,49 @@ std::optional<int> modeFromName(std::string_view mode) {
     return std::nullopt;
 }
 
+std::string_view glyphStyleName(int style) {
+    switch (style % 4) {
+    case 0:
+        return "classic";
+    case 1:
+        return "dense";
+    case 2:
+        return "blocks";
+    default:
+        return "wire";
+    }
+}
+
+std::string_view glyphRampForStyle(int style) {
+    switch (style % 4) {
+    case 0:
+        return " .:-=+*#%@";
+    case 1:
+        return " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+    case 2:
+        return "  ..::--==++**##%%@@";
+    default:
+        return " .`-~:+<>\\/|{}[]()1tfLCG08@";
+    }
+}
+
+std::optional<int> glyphStyleFromName(std::string_view style) {
+    if (style == "classic" || style == "scope") {
+        return 0;
+    }
+    if (style == "dense" || style == "crt") {
+        return 1;
+    }
+    if (style == "blocks" || style == "block") {
+        return 2;
+    }
+    if (style == "wire" || style == "vector") {
+        return 3;
+    }
+
+    return std::nullopt;
+}
+
 std::optional<int> positiveIntValue(int argc, char** argv, std::string_view target) {
     const auto value = argValue(argc, argv, target);
     if (!value.has_value() || value->empty()) {
@@ -120,6 +163,7 @@ void printHelp() {
       << "  --density N            signal density, 0.25 to 2.0\n"
       << "  --zoom N               visual zoom, 0.25 to 4.0\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
+      << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --title TEXT           title shown in the header\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
@@ -139,6 +183,7 @@ struct Controls {
     double density{ 1.0 };
     double zoom{ 1.0 };
     int fade{ 2 };
+    int glyphStyle{ 0 };
     bool clearRequested{ false };
     std::string lastAdjustment{ "ready" };
     std::string inputStatus{ "input pending" };
@@ -257,6 +302,10 @@ void handleKey(int key, Controls& controls) {
     case 'c':
         controls.color = !controls.color;
         controls.lastAdjustment = "color";
+        break;
+    case 'g':
+        controls.glyphStyle = (controls.glyphStyle + 1) % 4;
+        controls.lastAdjustment = "glyphs";
         break;
     case 'x':
     case 'r':
@@ -392,20 +441,21 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
 
     if (controls.help) {
-        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  c color  r clear  q quit";
+        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  g glyphs  c color  r clear  q quit";
     }
 
     if (stats.has_value()) {
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | %s glyphs | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
           controls.density,
           controls.zoom,
           controls.fade,
+          glyphStyleName(controls.glyphStyle).data(),
           stats->rms,
           stats->peak,
           stats->min,
@@ -418,13 +468,14 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | %s glyphs | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
       controls.density,
       controls.zoom,
       controls.fade,
+      glyphStyleName(controls.glyphStyle).data(),
       controls.color ? "on" : "off",
       controls.inputStatus.c_str(),
       controls.lastAdjustment.c_str());
@@ -461,6 +512,12 @@ int main(int argc, char** argv) {
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
     controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, 0.25, 4.0);
     controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
+    if (const auto glyphArg = argValue(argc, argv, "--glyphs")) {
+        if (const auto glyphStyle = glyphStyleFromName(*glyphArg)) {
+            controls.glyphStyle = *glyphStyle;
+            controls.lastAdjustment = "glyphs cli";
+        }
+    }
     if (const auto modeArg = argValue(argc, argv, "--mode")) {
         if (const auto mode = modeFromName(*modeArg)) {
             controls.mode = *mode;
@@ -498,6 +555,7 @@ int main(int argc, char** argv) {
 #endif
         );
         renderer.setColor(controls.color);
+        renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
 
         if (controls.clearRequested) {
             renderer.clear();

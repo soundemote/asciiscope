@@ -223,12 +223,18 @@ void ConsoleRenderer::restoreTerminal() const {
     std::cout << "\x1b[?25h\x1b[0m\n";
 }
 
+void ConsoleRenderer::setGlyphRamp(std::string_view glyphRamp) {
+    if (!glyphRamp.empty()) {
+        config_.glyphRamp = std::string(glyphRamp);
+    }
+}
+
 int ConsoleRenderer::index(int x, int y) const noexcept {
     return y * config_.width + x;
 }
 
 char ConsoleRenderer::glyphFor(std::uint8_t age) const noexcept {
-    constexpr std::string_view ramp = " .:-=+*#%@";
+    const auto& ramp = config_.glyphRamp;
     const auto scaled = std::clamp<int>((static_cast<int>(age) * static_cast<int>(ramp.size() - 1)) / config_.maxAge, 0, static_cast<int>(ramp.size() - 1));
     return ramp[static_cast<std::size_t>(scaled)];
 }
