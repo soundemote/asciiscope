@@ -111,6 +111,7 @@ void printHelp() {
       << "  --help                 show this help\n"
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
+      << "  --fps N                presentation rate, 1 to 240\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
       << "  --width N              canvas width, 40 to 220\n"
@@ -125,7 +126,7 @@ void printHelp() {
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --zoom 1.6\n"
-      << "  asciiscope --mode spectral --frames 240\n";
+      << "  asciiscope --mode spectral --frames 240 --fps 30\n";
 }
 
 struct Controls {
@@ -472,6 +473,8 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
+    const int fps = boundedIntOption(argc, argv, "--fps", 60, 1, 240);
+    const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
 
@@ -516,7 +519,7 @@ int main(int argc, char** argv) {
 
         const std::string footer = showHud ? footerFor(controls, latestStats) : std::string{};
         renderer.present(title, scene.modeName(frame, controls.mode), footer, frame);
-        std::this_thread::sleep_for(std::chrono::milliseconds(16));
+        std::this_thread::sleep_for(frameDelay);
         ++presentedFrames;
     }
 
