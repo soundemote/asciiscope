@@ -16,6 +16,32 @@ https://mit-license.org/
 
 ![example.gif](https://github.com/soundemote/asciiscope/blob/main/example.gif)
 
+
+Windows Run command:
+
+```text
+cmd /k "cd /d C:\Users\argit\Desktop\asciiscope && build\Release\asciiscope.exe"
+```
+
+## live controls
+
+```markdown
+1 2 3        lock bloom / tunnel / particle mode
+0            return to automatic mode rotation
+Space        pause or resume
++ -          speed up or slow down
+Up Down      speed up or slow down
+[ ]          reduce or increase signal density
+Left Right   reduce or increase signal density
+Mouse wheel  zoom without clearing current trails
+z Z          keyboard zoom out / in
+< >          shorter or longer trails
+c            toggle color
+r or x       clear trails
+h or ?       show control help
+q or Esc     quit
+```
+
 ## what is this?
 
 Asciiscope is a dark colorful console instrument for signal art.
@@ -158,31 +184,6 @@ Options:
 .\build\Release\asciiscope.exe --once
 ```
 
-Windows Run command:
-
-```text
-cmd /k "cd /d C:\Users\argit\Desktop\asciiscope && build\Release\asciiscope.exe"
-```
-
-## live controls
-
-```markdown
-1 2 3        lock bloom / tunnel / particle mode
-0            return to automatic mode rotation
-Space        pause or resume
-+ -          speed up or slow down
-Up Down      speed up or slow down
-[ ]          reduce or increase signal density
-Left Right   reduce or increase signal density
-Mouse wheel  zoom without clearing current trails
-z Z          keyboard zoom out / in
-< >          shorter or longer trails
-c            toggle color
-r or x       clear trails
-h or ?       show control help
-q or Esc     quit
-```
-
 The footer shows the current mode, speed, density, zoom, trail amount, color
 state, pause state, and last adjusted control.
 
@@ -197,6 +198,14 @@ SandboxSignalInput
 
 PluginRenderer
 // asciiscope-clap draws the console look inside a plugin editor
+
+SyphonOutput
+// macOS realtime frame sharing for VJ/video tools
+// https://syphon.info/
+
+SpoutOutput
+// Windows realtime video routing for VJ/video tools
+// https://spout.zeal.co/
 
 WaveformScope
 // honest oscilloscope mode for real synth signals
@@ -214,4 +223,5 @@ SpectralConsole
 * dark console, bright signal
 * generated demos now, live synths next
 * keep the visual core independent
+* terminal first, video-pipeline ready
 ```
