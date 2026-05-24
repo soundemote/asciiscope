@@ -200,6 +200,7 @@ void printHelp() {
       << "  --help                 show this help\n"
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
+      << "  --warmup N             draw N hidden frames before recording\n"
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral\n"
@@ -552,6 +553,7 @@ int main(int argc, char** argv) {
     int frameLimit = 0;
     int width = 112;
     int height = 34;
+    int warmupFrames = 0;
     std::uint32_t seed = 0xA5C115C0;
     bool showHud = !hasArg(argc, argv, "--no-hud");
     bool showChrome = !hasArg(argc, argv, "--canvas-only");
@@ -594,6 +596,10 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
+    warmupFrames = boundedIntOption(argc, argv, "--warmup", 0, 0, 3600);
+    if (warmupFrames > 0) {
+        controls.lastAdjustment = "warmup cli";
+    }
     if (const auto seedArg = seedValue(argc, argv, "--seed")) {
         seed = *seedArg;
         controls.lastAdjustment = "seed cli";
@@ -615,6 +621,27 @@ int main(int argc, char** argv) {
     double visualFrame = 0.0;
     int presentedFrames = 0;
 
+    auto drawNextFrame = [&]() {
+        const int frame = static_cast<int>(visualFrame);
+        const auto sampleCount = static_cast<std::size_t>(std::clamp(5400.0 * controls.density, 1200.0, 10800.0));
+        auto signalFrame = signalInput.nextFrame(static_cast<std::uint64_t>(frame), sampleCount);
+        if (const auto* source = signalFrame.findSource("main")) {
+            latestStats = source->stats;
+        }
+        asciiscope::SceneSettings settings{ .mode = controls.mode, .density = controls.density, .zoom = controls.zoom, .fade = controls.fade };
+        scene.draw(signalFrame, settings);
+        visualFrame += controls.speed;
+        return frame;
+    };
+
+    renderer.setColor(controls.color);
+    renderer.setChrome(showChrome);
+    renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
+    renderer.setPalette(controls.palette);
+    for (int i = 0; i < warmupFrames; ++i) {
+        drawNextFrame();
+    }
+
     while (controls.running && (frameLimit == 0 || presentedFrames < frameLimit)) {
         pollControls(controls
 #ifdef _WIN32
@@ -632,17 +659,10 @@ int main(int argc, char** argv) {
             controls.clearRequested = false;
         }
 
-        const int frame = static_cast<int>(visualFrame);
-        const auto sampleCount = static_cast<std::size_t>(std::clamp(5400.0 * controls.density, 1200.0, 10800.0));
+        int frame = static_cast<int>(visualFrame);
 
         if (!controls.paused) {
-            auto signalFrame = signalInput.nextFrame(static_cast<std::uint64_t>(frame), sampleCount);
-            if (const auto* source = signalFrame.findSource("main")) {
-                latestStats = source->stats;
-            }
-            asciiscope::SceneSettings settings{ .mode = controls.mode, .density = controls.density, .zoom = controls.zoom, .fade = controls.fade };
-            scene.draw(signalFrame, settings);
-            visualFrame += controls.speed;
+            frame = drawNextFrame();
         }
 
         const std::string footer = showHud && showChrome ? footerFor(controls, latestStats) : std::string{};

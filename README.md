@@ -188,6 +188,7 @@ Options:
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
+.\build\Release\asciiscope.exe --mode spectral --frames 240 --warmup 90 --fps 30
 .\build\Release\asciiscope.exe --mode spectral --seed 0xA5C115C0
 .\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
@@ -204,6 +205,9 @@ RMS/peak/min/max, glyph style, input backend, pause state, and last adjusted
 control.
 
 `--seed` accepts decimal or `0x` hex values for repeatable demo takes.
+
+`--warmup` draws hidden frames before the first visible frame, so trails and
+envelopes are already alive when capture starts.
 
 `--canvas-only` hides the title, border, and footer for clean OBS crops.
 
