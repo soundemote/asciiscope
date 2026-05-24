@@ -188,6 +188,7 @@ Options:
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
+.\build\Release\asciiscope.exe --mode spectral --seconds 8 --fps 30
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --warmup 90 --fps 30
 .\build\Release\asciiscope.exe --mode spectral --seed 0xA5C115C0
 .\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
@@ -205,6 +206,9 @@ RMS/peak/min/max, glyph style, input backend, pause state, and last adjusted
 control.
 
 `--seed` accepts decimal or `0x` hex values for repeatable demo takes.
+
+`--seconds` converts clip duration into a visible frame count using the selected
+`--fps`. If both `--seconds` and `--frames` are present, `--frames` wins.
 
 `--warmup` draws hidden frames before the first visible frame, so trails and
 envelopes are already alive when capture starts.

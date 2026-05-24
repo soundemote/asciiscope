@@ -200,6 +200,7 @@ void printHelp() {
       << "  --help                 show this help\n"
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
+      << "  --seconds N            run for N seconds at the selected fps\n"
       << "  --warmup N             draw N hidden frames before recording\n"
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
@@ -220,7 +221,7 @@ void printHelp() {
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --zoom 1.6\n"
-      << "  asciiscope --mode spectral --frames 240 --fps 30\n";
+      << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
 }
 
 struct Controls {
@@ -593,6 +594,13 @@ int main(int argc, char** argv) {
     if (hasArg(argc, argv, "--once")) {
         frameLimit = 90;
     }
+    const int fps = boundedIntOption(argc, argv, "--fps", 60, 1, 240);
+    if (const auto seconds = doubleValue(argc, argv, "--seconds")) {
+        if (*seconds > 0.0) {
+            frameLimit = std::clamp(static_cast<int>((*seconds * static_cast<double>(fps)) + 0.999), 1, 864000);
+            controls.lastAdjustment = "seconds cli";
+        }
+    }
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
@@ -604,7 +612,6 @@ int main(int argc, char** argv) {
         seed = *seedArg;
         controls.lastAdjustment = "seed cli";
     }
-    const int fps = boundedIntOption(argc, argv, "--fps", 60, 1, 240);
     const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
