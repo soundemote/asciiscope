@@ -12,7 +12,7 @@ namespace asciiscope {
 
 class DemoSignalInput final : public ISignalInput {
   public:
-    DemoSignalInput();
+    explicit DemoSignalInput(std::uint32_t seed = 0xA5C115C0);
 
     SignalFrame nextFrame(std::uint64_t frameIndex, std::size_t sampleCount) override;
 

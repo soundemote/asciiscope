@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <optional>
 #include <string_view>
 #include <string>
@@ -116,6 +117,21 @@ std::optional<int> positiveIntValue(int argc, char** argv, std::string_view targ
     return static_cast<int>(parsed);
 }
 
+std::optional<std::uint32_t> seedValue(int argc, char** argv, std::string_view target) {
+    const auto value = argValue(argc, argv, target);
+    if (!value.has_value() || value->empty()) {
+        return std::nullopt;
+    }
+
+    char* end{};
+    const auto parsed = std::strtoull(value->data(), &end, 0);
+    if (end == value->data() || *end != '\0' || parsed > std::numeric_limits<std::uint32_t>::max()) {
+        return std::nullopt;
+    }
+
+    return static_cast<std::uint32_t>(parsed);
+}
+
 int boundedIntOption(int argc, char** argv, std::string_view target, int fallback, int minimum, int maximum) {
     if (const auto value = positiveIntValue(argc, argv, target)) {
         return std::clamp(*value, minimum, maximum);
@@ -155,6 +171,7 @@ void printHelp() {
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
       << "  --fps N                presentation rate, 1 to 240\n"
+      << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
       << "  --width N              canvas width, 40 to 220\n"
@@ -496,6 +513,7 @@ int main(int argc, char** argv) {
     int frameLimit = 0;
     int width = 112;
     int height = 34;
+    std::uint32_t seed = 0xA5C115C0;
     bool showHud = !hasArg(argc, argv, "--no-hud");
     std::string title = "ASCIISCOPE / SOEMDSP";
 
@@ -530,13 +548,17 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
+    if (const auto seedArg = seedValue(argc, argv, "--seed")) {
+        seed = *seedArg;
+        controls.lastAdjustment = "seed cli";
+    }
     const int fps = boundedIntOption(argc, argv, "--fps", 60, 1, 240);
     const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
 
     asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 13, .color = controls.color });
-    asciiscope::DemoSignalInput signalInput;
+    asciiscope::DemoSignalInput signalInput(seed);
     asciiscope::AnimationScene scene(renderer);
 
 #ifdef _WIN32

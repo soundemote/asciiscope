@@ -187,6 +187,7 @@ Options:
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
+.\build\Release\asciiscope.exe --mode spectral --seed 0xA5C115C0
 .\build\Release\asciiscope.exe --mode tunnel --width 96 --height 54
 .\build\Release\asciiscope.exe --mode particles --speed 1.4 --density 1.3 --zoom 1.2 --trail 3
 .\build\Release\asciiscope.exe --mode tunnel --glyphs dense
@@ -198,6 +199,8 @@ Options:
 The footer shows the current mode, speed, density, zoom, trail amount, signal
 RMS/peak/min/max, glyph style, input backend, pause state, and last adjusted
 control.
+
+`--seed` accepts decimal or `0x` hex values for repeatable demo takes.
 
 Glyph styles:
 

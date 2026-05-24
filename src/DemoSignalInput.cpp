@@ -7,7 +7,7 @@
 
 namespace asciiscope {
 
-DemoSignalInput::DemoSignalInput() {
+DemoSignalInput::DemoSignalInput(std::uint32_t seed) {
     soemdsp::SampleRate::Update(44100.0, 64.0);
 
     sprott_.frequency = 28.0;
@@ -22,7 +22,7 @@ DemoSignalInput::DemoSignalInput() {
     pulseClock_.setSampleRate(soemdsp::SampleRate::freq_);
     pulseClock_.setFrequency(1.8);
 
-    noise_.setSeed(0xA5C115C0);
+    noise_.setSeed(seed);
 
     envelope_.delayTime_ = 0.0;
     envelope_.attackTime_ = 0.003;
