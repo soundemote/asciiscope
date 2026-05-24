@@ -236,10 +236,10 @@ ice
 Presets:
 
 ```markdown
-bloom-reel
-neon-tunnel
-particle-storm
-ghost-spectral
+bloom-reel      classic glyphs, neon palette, attractor bloom
+neon-tunnel     dense glyphs, neon palette, wide tunnel
+particle-storm  block glyphs, ember palette, high density particles
+ghost-spectral  wire glyphs, ice palette, wide spectral ribbon
 ```
 
 ## future

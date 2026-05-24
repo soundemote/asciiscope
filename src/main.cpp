@@ -250,12 +250,16 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.2;
         controls.zoom = 1.1;
         controls.fade = 2;
+        controls.glyphStyle = 0;
+        controls.palette = 0;
     } else if (preset == "neon-tunnel" || preset == "tunnel") {
         controls.mode = 1;
         controls.speed = 1.2;
         controls.density = 1.1;
         controls.zoom = 1.15;
         controls.fade = 2;
+        controls.glyphStyle = 1;
+        controls.palette = 0;
         width = 120;
         height = 36;
     } else if (preset == "particle-storm" || preset == "particles") {
@@ -264,12 +268,16 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.6;
         controls.zoom = 1.25;
         controls.fade = 3;
+        controls.glyphStyle = 2;
+        controls.palette = 1;
     } else if (preset == "ghost-spectral" || preset == "spectral") {
         controls.mode = 3;
         controls.speed = 0.85;
         controls.density = 1.25;
         controls.zoom = 1.0;
         controls.fade = 4;
+        controls.glyphStyle = 3;
+        controls.palette = 3;
         width = 128;
         height = 36;
     } else {
