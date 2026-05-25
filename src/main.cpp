@@ -199,6 +199,7 @@ void printHelp() {
       << "Options:\n"
       << "  --help                 show this help\n"
       << "  --list-presets         show preset identities and capture recipes\n"
+      << "  --describe             show resolved launch settings and exit\n"
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
       << "  --seconds N            run for N seconds at the selected fps\n"
@@ -223,6 +224,7 @@ void printHelp() {
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
+      << "  asciiscope --preset ghost-spectral --reel --describe\n"
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
 }
 
@@ -563,6 +565,51 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     return footer;
 }
 
+std::string_view modeLabel(int mode) {
+    if (mode < 0) {
+        return "auto";
+    }
+
+    switch (mode % 4) {
+    case 0:
+        return "bloom";
+    case 1:
+        return "tunnel";
+    case 2:
+        return "particles";
+    default:
+        return "spectral";
+    }
+}
+
+void printLaunchDescription(const Controls& controls,
+                            int frameLimit,
+                            int warmupFrames,
+                            int fps,
+                            int width,
+                            int height,
+                            bool showChrome,
+                            bool showHud,
+                            std::uint32_t seed) {
+    std::cout
+      << "asciiscope launch\n\n"
+      << "  mode       " << modeLabel(controls.mode) << "\n"
+      << "  fps        " << fps << "\n"
+      << "  frames     " << (frameLimit == 0 ? std::string("unlimited") : std::to_string(frameLimit)) << "\n"
+      << "  warmup     " << warmupFrames << "\n"
+      << "  canvas     " << width << "x" << height << "\n"
+      << "  speed      " << controls.speed << "\n"
+      << "  density    " << controls.density << "\n"
+      << "  zoom       " << controls.zoom << "\n"
+      << "  trail      " << controls.fade << "\n"
+      << "  glyphs     " << glyphStyleName(controls.glyphStyle) << "\n"
+      << "  palette    " << paletteName(controls.palette) << "\n"
+      << "  chrome     " << (showChrome ? "on" : "off") << "\n"
+      << "  hud        " << (showHud && showChrome ? "on" : "off") << "\n"
+      << "  color      " << (controls.color ? "on" : "off") << "\n"
+      << "  seed       0x" << std::hex << std::uppercase << seed << std::dec << std::nouppercase << "\n";
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -647,6 +694,11 @@ int main(int argc, char** argv) {
     const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
+
+    if (hasArg(argc, argv, "--describe")) {
+        printLaunchDescription(controls, frameLimit, warmupFrames, fps, width, height, showChrome, showHud, seed);
+        return 0;
+    }
 
     asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 13, .color = controls.color });
     asciiscope::DemoSignalInput signalInput(seed);
