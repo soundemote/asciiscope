@@ -240,6 +240,7 @@ void printHelp() {
       << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
       << "  --native-color         use fast 16-color console renderer instead of ANSI truecolor\n"
+      << "  --color-ramp           print a static palette fade diagnostic and exit\n"
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
@@ -303,6 +304,39 @@ struct Controls {
     std::string lastAdjustment{ "ready" };
     std::string inputStatus{ "input pending" };
 };
+
+void printColorRamp(const Controls& controls, int width) {
+    const int rampWidth = std::clamp(width, 48, 160);
+    asciiscope::ConsoleRenderer renderer({
+      .width = rampWidth,
+      .height = 9,
+      .maxAge = 31,
+      .color = controls.color,
+      .smoothColor = controls.smoothColor,
+      .chrome = false,
+      .blackFloor = controls.blackFloor,
+    });
+
+    renderer.setGlyphRamp("    ....::::----====++++****####%%%%@@@@");
+    renderer.setPalette(controls.palette);
+    renderer.setBlackFloor(controls.blackFloor);
+    renderer.beginFrame();
+
+    for (int x = 0; x < rampWidth; ++x) {
+        const double t = static_cast<double>(x) / static_cast<double>(std::max(1, rampWidth - 1));
+        const double px = t * 2.0 - 1.0;
+        for (int y = 2; y <= 6; ++y) {
+            const double py = 1.0 - (static_cast<double>(y) / 8.0) * 2.0;
+            renderer.plot(px, py, t);
+        }
+    }
+
+    std::cout << "asciiscope color ramp | palette " << paletteName(controls.palette)
+              << " | " << (controls.smoothColor ? "truecolor" : "native")
+              << " | black floor " << controls.blackFloor << "\n";
+    std::cout << renderer.render({}, {}, {}, 0);
+    renderer.restoreTerminal();
+}
 
 void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
                       const Controls& controls,
@@ -958,6 +992,11 @@ int main(int argc, char** argv) {
     const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
+
+    if (hasArg(argc, argv, "--color-ramp")) {
+        printColorRamp(controls, width);
+        return 0;
+    }
 
     if (hasArg(argc, argv, "--describe")) {
         printLaunchDescription(controls, frameLimit, warmupFrames, fps, holdSeconds, width, height, showChrome, showHud, seed, tourMode, tourSeconds);

@@ -63,7 +63,7 @@ std::string_view AnimationScene::modeName(int frame, int overrideMode) const noe
     case 3:
         return "spectral ribbon";
     default:
-        return "slow sincos circle";
+        return "circle calibration trace";
     }
 }
 

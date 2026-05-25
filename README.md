@@ -55,6 +55,7 @@ q or Esc     quit
 
 By default Asciiscope uses ANSI truecolor for smooth trail fades. Use
 `--native-color` to compare the faster 16-color Windows console path.
+Use `--color-ramp` to print a static palette fade diagnostic and exit.
 
 ## what is this?
 
