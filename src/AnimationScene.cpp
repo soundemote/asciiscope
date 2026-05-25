@@ -161,7 +161,7 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
 void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
     constexpr std::string_view glyphs{ "@#%*+=:. " };
     constexpr int tailPoints = 112;
-    const double circleHz = 0.045;
+    const double circleHz = std::clamp(settings.circleFrequencyHz, 0.005, 1.0);
     const double headAngle = frame.timeSeconds * circleHz * soemdsp::constant::kTAU;
     const double radius = std::clamp(0.58 + source.stats.rms * 0.08, 0.34, 0.72);
     const double tailRadians = soemdsp::constant::kTAU * 0.62;

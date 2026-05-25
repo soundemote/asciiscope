@@ -40,6 +40,7 @@ Left Right   reduce or increase signal density
 Mouse wheel  deep zoom without clearing current trails
 Left drag    pan the visual center without clearing trails
 z Z          keyboard zoom out / in
+f F          slower or faster circle trace frequency
 < >          shorter or longer trails
 g            cycle glyph style
 p            cycle color palette
@@ -202,6 +203,7 @@ Options:
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode circle
+.\build\Release\asciiscope.exe --mode circle --circle-hz 0.025
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
