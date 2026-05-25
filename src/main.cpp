@@ -30,7 +30,7 @@ constexpr double kMaxCircleFrequency = 10.0;
 constexpr double kMinBrightness = 0.25;
 constexpr double kMaxBrightness = 1.5;
 constexpr int kMinBlackFloor = 0;
-constexpr int kMaxBlackFloor = 12;
+constexpr int kMaxBlackFloor = 31;
 
 bool hasArg(int argc, char** argv, std::string_view target) {
     for (int i = 1; i < argc; ++i) {
@@ -231,7 +231,7 @@ void printHelp() {
       << "  --zoom N               visual zoom, 0.25 to 16.0\n"
       << "  --circle-hz N          circle trace frequency, 0.005 to 10.0 Hz\n"
       << "  --brightness N         trace brightness, 0.25 to 1.5\n"
-      << "  --black-floor N        ages at or below this draw as empty cells, 0 to 12\n"
+      << "  --black-floor N        ages at or below this draw as empty cells, 0 to 31\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"
@@ -239,6 +239,7 @@ void printHelp() {
       << "  --canvas-only          hide header, border, and footer\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-color             monochrome output\n\n"
+      << "  --native-color         use fast 16-color console renderer instead of ANSI truecolor\n"
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
@@ -282,6 +283,7 @@ struct Controls {
     bool paused{ false };
     bool help{ true };
     bool color{ true };
+    bool smoothColor{ true };
     int mode{ 4 };
     double speed{ 1.0 };
     double density{ 1.0 };
@@ -290,7 +292,7 @@ struct Controls {
     double centerY{ 0.0 };
     double circleFrequencyHz{ 1.25 };
     double brightness{ 1.0 };
-    int blackFloor{ 6 };
+    int blackFloor{ 0 };
     int fade{ 2 };
     int glyphStyle{ 0 };
     int palette{ 0 };
@@ -852,6 +854,7 @@ void printLaunchDescription(const Controls& controls,
       << "  trail      " << controls.fade << "\n"
       << "  glyphs     " << glyphStyleName(controls.glyphStyle) << "\n"
       << "  palette    " << paletteName(controls.palette) << "\n"
+      << "  color mode " << (controls.smoothColor ? "truecolor" : "native") << "\n"
       << "  chrome     " << (showChrome ? "on" : "off") << "\n"
       << "  hud        " << (showHud && showChrome ? "on" : "off") << "\n"
       << "  color      " << (controls.color ? "on" : "off") << "\n"
@@ -893,6 +896,7 @@ int main(int argc, char** argv) {
     }
 
     controls.color = !hasArg(argc, argv, "--no-color");
+    controls.smoothColor = !hasArg(argc, argv, "--native-color");
     controls.speed = boundedDoubleOption(argc, argv, "--speed", controls.speed, 0.15, 4.0);
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
     controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, kMinZoom, kMaxZoom);
@@ -960,7 +964,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 13, .color = controls.color });
+    asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 31, .color = controls.color, .smoothColor = controls.smoothColor, .blackFloor = controls.blackFloor });
     asciiscope::DemoSignalInput signalInput(seed);
     asciiscope::AnimationScene scene(renderer);
 
@@ -1010,6 +1014,7 @@ int main(int argc, char** argv) {
 
     updateTourCue();
     renderer.setColor(controls.color);
+    renderer.setSmoothColor(controls.smoothColor);
     renderer.setChrome(showChrome);
     renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
     renderer.setPalette(controls.palette);
@@ -1029,6 +1034,7 @@ int main(int argc, char** argv) {
         );
         updateTourCue();
         renderer.setColor(controls.color);
+        renderer.setSmoothColor(controls.smoothColor);
         renderer.setChrome(showChrome);
         renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
         renderer.setPalette(controls.palette);

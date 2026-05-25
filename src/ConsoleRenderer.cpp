@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -17,7 +18,49 @@ namespace asciiscope {
 
 namespace {
 
+std::string ansiRgb(int r, int g, int b) {
+    char code[32]{};
+    std::snprintf(code, sizeof(code), "\x1b[38;2;%d;%d;%dm", r, g, b);
+    return code;
+}
+
+std::string smoothRgbForAge(std::uint8_t age, int maxAge, int palette) {
+    const double t = std::clamp(static_cast<double>(age) / static_cast<double>(std::max(1, maxAge)), 0.0, 1.0);
+    const double glow = t * t;
+    int r{};
+    int g{};
+    int b{};
+
+    if (palette % 4 == 1) {
+        r = static_cast<int>(std::lround(255.0 * glow));
+        g = static_cast<int>(std::lround(190.0 * std::pow(t, 2.35)));
+        b = static_cast<int>(std::lround(82.0 * std::pow(t, 3.2)));
+    } else if (palette % 4 == 2) {
+        r = static_cast<int>(std::lround(220.0 * std::pow(t, 3.0)));
+        g = static_cast<int>(std::lround(255.0 * glow));
+        b = static_cast<int>(std::lround(68.0 * std::pow(t, 2.7)));
+    } else if (palette % 4 == 3) {
+        r = static_cast<int>(std::lround(245.0 * std::pow(t, 4.0)));
+        g = static_cast<int>(std::lround(255.0 * std::pow(t, 2.2)));
+        b = static_cast<int>(std::lround(255.0 * glow));
+    } else {
+        r = static_cast<int>(std::lround((255.0 * std::pow(t, 5.0)) + (145.0 * std::pow(t, 1.7) * (1.0 - t))));
+        g = static_cast<int>(std::lround((255.0 * std::pow(t, 2.6)) + (80.0 * t * (1.0 - t))));
+        b = static_cast<int>(std::lround((255.0 * std::pow(t, 2.15)) + (55.0 * std::sqrt(t) * (1.0 - t))));
+    }
+
+    return ansiRgb(std::clamp(r, 0, 255), std::clamp(g, 0, 255), std::clamp(b, 0, 255));
+}
+
 #ifdef _WIN32
+void enableVirtualTerminal(HANDLE output) {
+    DWORD mode{};
+    if (!GetConsoleMode(output, &mode)) {
+        return;
+    }
+    SetConsoleMode(output, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+}
+
 WORD attributeForAge(std::uint8_t age, int maxAge, bool color, int palette) {
     if (!color) {
         return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
@@ -217,6 +260,12 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
         return;
     }
 
+    if (config_.smoothColor) {
+        enableVirtualTerminal(output);
+        std::cout << render(title, mode, footer, frame) << std::flush;
+        return;
+    }
+
     CONSOLE_CURSOR_INFO cursorInfo{};
     if (GetConsoleCursorInfo(output, &cursorInfo)) {
         cursorInfo.bVisible = FALSE;
@@ -319,6 +368,10 @@ char ConsoleRenderer::glyphFor(std::uint8_t age) const noexcept {
 }
 
 std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
+    if (config_.smoothColor) {
+        return smoothRgbForAge(age, config_.maxAge, config_.palette);
+    }
+
     const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : 0));
 
     if (config_.palette % 4 == 1) {

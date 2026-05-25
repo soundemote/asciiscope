@@ -53,6 +53,9 @@ h or ?       show control help
 q or Esc     quit
 ```
 
+By default Asciiscope uses ANSI truecolor for smooth trail fades. Use
+`--native-color` to compare the faster 16-color Windows console path.
+
 ## what is this?
 
 Asciiscope is a dark colorful console instrument for signal art.

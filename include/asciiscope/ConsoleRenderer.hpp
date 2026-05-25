@@ -14,10 +14,11 @@ class ConsoleRenderer {
         int height{ 34 };
         int maxAge{ 13 };
         bool color{ true };
+        bool smoothColor{ true };
         bool chrome{ true };
         std::string glyphRamp{ " .:-=+*#%@" };
         int palette{ 0 };
-        int blackFloor{ 6 };
+        int blackFloor{ 0 };
     };
 
     explicit ConsoleRenderer(Config config = {});
@@ -32,6 +33,7 @@ class ConsoleRenderer {
     void present(std::string_view title, std::string_view mode, std::string_view footer, int frame) const;
     void restoreTerminal() const;
     void setColor(bool enabled) noexcept { config_.color = enabled; }
+    void setSmoothColor(bool enabled) noexcept { config_.smoothColor = enabled; }
     void setChrome(bool enabled) noexcept { config_.chrome = enabled; }
     void setGlyphRamp(std::string_view glyphRamp);
     void setPalette(int palette) noexcept { config_.palette = palette; }
