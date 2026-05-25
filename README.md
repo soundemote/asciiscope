@@ -259,6 +259,12 @@ ghost-spectral  wire glyphs, ice palette, wide spectral ribbon
 
 ## future
 
+CLAP/JUCE handoff note:
+
+```markdown
+docs/CLAP_STARTINGPOINT_HANDOFF.md
+```
+
 ```rust
 AudioSignalInput
 // live synth or audio interface input
