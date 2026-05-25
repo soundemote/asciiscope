@@ -17,6 +17,16 @@ void plotView(ConsoleRenderer& renderer, double x, double y, double intensity, c
     renderer.plot((x * settings.zoom) + settings.centerX, (y * settings.zoom) + settings.centerY, intensity);
 }
 
+int gridX(ConsoleRenderer& renderer, double x, const SceneSettings& settings) {
+    const double px = (((x * settings.zoom) + settings.centerX) * 0.5 + 0.5) * static_cast<double>(renderer.width() - 1);
+    return static_cast<int>(std::round(px));
+}
+
+int gridY(ConsoleRenderer& renderer, double y, const SceneSettings& settings) {
+    const double py = (0.5 - (((y * settings.zoom) + settings.centerY) * 0.5)) * static_cast<double>(renderer.height() - 1);
+    return static_cast<int>(std::round(py));
+}
+
 } // namespace
 
 AnimationScene::AnimationScene(ConsoleRenderer& renderer)
@@ -43,8 +53,11 @@ void AnimationScene::draw(const SignalFrame& frame, const SceneSettings& setting
     case 2:
         drawParticleField(frame, *source, settings);
         break;
-    default:
+    case 3:
         drawSpectralRibbon(frame, *source, settings);
+        break;
+    default:
+        drawSinCosCircle(frame, *source, settings);
         break;
     }
 }
@@ -57,17 +70,19 @@ std::string_view AnimationScene::modeName(int frame, int overrideMode) const noe
         return "phasor wave tunnel";
     case 2:
         return "pluck/noise particle field";
-    default:
+    case 3:
         return "spectral ribbon";
+    default:
+        return "sincos ascii circle";
     }
 }
 
 int AnimationScene::activeMode(int frame, int overrideMode) const noexcept {
     if (overrideMode >= 0) {
-        return overrideMode % 4;
+        return overrideMode % 5;
     }
 
-    return (frame / 240) % 4;
+    return (frame / 240) % 5;
 }
 
 void AnimationScene::drawAttractorBloom(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
@@ -141,6 +156,40 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
             plotView(renderer_, px / settings.zoom, py / settings.zoom, 0.20 + energy * 0.9 - rise * 0.18, settings);
         }
     }
+}
+
+void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
+    constexpr std::string_view glyphs{ "@*oO+x=:. " };
+    const double phase = frame.timeSeconds * 0.42;
+    const double pulse = source.stats.peak * 0.16 + std::sin(frame.timeSeconds * soemdsp::constant::kTAU * 0.23) * 0.04;
+    const double radius = std::clamp(0.46 + pulse, 0.25, 0.72);
+
+    for (int ring = 0; ring < 4; ++ring) {
+        const double ringRadius = radius + static_cast<double>(ring) * 0.035;
+        const double ringPhase = phase * (1.0 + static_cast<double>(ring) * 0.18);
+        const double intensity = 0.92 - static_cast<double>(ring) * 0.15;
+
+        for (int i = 0; i < 144; ++i) {
+            const auto& s = sampleAt(source, static_cast<std::size_t>(i * 31 + ring * 127));
+            const double p = static_cast<double>(i) / 144.0;
+            const double wobble = std::sin((p * 8.0 + s.lfo * 0.2 + frame.timeSeconds * 0.6) * soemdsp::constant::kTAU) * 0.012;
+            const double angle = p * soemdsp::constant::kTAU + ringPhase + s.noise * 0.01;
+            const double x = std::cos(angle) * (ringRadius + wobble);
+            const double y = std::sin(angle) * (ringRadius + wobble);
+            plotView(renderer_, x, y, intensity + s.pulse * 0.25, settings);
+
+            if (i % 3 == 0) {
+                const auto glyphIndex = static_cast<std::size_t>((i / 3 + ring + static_cast<int>(frame.frameIndex / 4)) % static_cast<int>(glyphs.size()));
+                const char glyph[2]{ glyphs[glyphIndex], '\0' };
+                renderer_.writeText(gridX(renderer_, x, settings), gridY(renderer_, y, settings), glyph, 8 + static_cast<std::uint8_t>(ring));
+            }
+        }
+    }
+
+    const double markerAngle = phase * soemdsp::constant::kTAU;
+    const double mx = std::cos(markerAngle) * radius;
+    const double my = std::sin(markerAngle) * radius;
+    renderer_.writeText(gridX(renderer_, mx, settings), gridY(renderer_, my, settings), "SOEM", 13);
 }
 
 } // namespace asciiscope

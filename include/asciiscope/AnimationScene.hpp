@@ -28,6 +28,7 @@ class AnimationScene {
     void drawWaveTunnel(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings);
     void drawParticleField(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings);
     void drawSpectralRibbon(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings);
+    void drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings);
     [[nodiscard]] int activeMode(int frame, int overrideMode) const noexcept;
 
     ConsoleRenderer& renderer_;

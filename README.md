@@ -30,7 +30,7 @@ to hide or show it; capture modes such as `--reel`, `--tour`, and
 `--canvas-only` stay clean.
 
 ```markdown
-1 2 3 4      lock bloom / tunnel / particle / spectral mode
+1 2 3 4 5    lock bloom / tunnel / particle / spectral / circle mode
 0            return to automatic mode rotation
 Space        pause or resume
 + -          speed up or slow down
@@ -137,6 +137,12 @@ phasor wave tunnel
 
 pluck/noise particle field
 // envelope flashes, noise drift, orbiting signal dust
+
+spectral ribbon
+// vertical signal energy bars with flowing phase motion
+
+sin/cos ascii circle
+// pure circular diagnostic trace made from fun terminal characters
 ```
 
 ## soemdsp objects currently used
@@ -195,6 +201,7 @@ Options:
 .\build\Release\asciiscope.exe --tour --tour-seconds 3 --seconds 12
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
+.\build\Release\asciiscope.exe --mode circle
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30

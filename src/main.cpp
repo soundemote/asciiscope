@@ -58,6 +58,9 @@ std::optional<int> modeFromName(std::string_view mode) {
     if (mode == "4" || mode == "spectral" || mode == "ribbon") {
         return 3;
     }
+    if (mode == "5" || mode == "circle" || mode == "sincos") {
+        return 4;
+    }
 
     return std::nullopt;
 }
@@ -213,7 +216,7 @@ void printHelp() {
       << "  --reel                 8s canvas capture defaults for social clips\n"
       << "  --tour                 cycle the strongest looks in one capture take\n"
       << "  --tour-seconds N       seconds per tour look, 1 to 30\n"
-      << "  --mode NAME            bloom | tunnel | particles | spectral\n"
+      << "  --mode NAME            bloom | tunnel | particles | spectral | circle\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
       << "  --width N              canvas width, 40 to 220\n"
       << "  --height N             canvas height, 16 to 80\n"
@@ -235,7 +238,7 @@ void printHelp() {
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n\n"
       << "Live controls:\n"
       << "  h or ?                hide/show the in-canvas control panel\n"
-      << "  1 2 3 4 / 0           modes / automatic mode rotation\n"
+      << "  1 2 3 4 5 / 0         modes / automatic mode rotation\n"
       << "  Space                 pause or resume\n"
       << "  + - or Up Down        speed\n"
       << "  [ ] or Left Right     density\n"
@@ -293,12 +296,12 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
     }
 
     char line[128]{};
-    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
+    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : (controls.mode == 3 ? "spectral" : "circle"))));
     const int x = 2;
     int y = 1;
 
     renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
-    renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  0 auto", 11);
+    renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  5 circle  0 auto", 11);
     renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel/z/Z zoom", 11);
     renderer.writeText(x, y++, "left-click drag pans center without clearing trails", 11);
     renderer.writeText(x, y++, "[/] or left/right density  </> trails  g glyphs  p palette", 11);
@@ -486,6 +489,10 @@ void handleKey(int key, Controls& controls) {
     case '4':
         controls.mode = 3;
         controls.lastAdjustment = "mode spectral";
+        break;
+    case '5':
+        controls.mode = 4;
+        controls.lastAdjustment = "mode circle";
         break;
     case '+':
     case '=':
@@ -693,7 +700,7 @@ void pollControls(Controls& controls,
 
 std::string footerFor(const Controls& controls, const std::optional<asciiscope::SignalStats>& stats) {
     char footer[360]{};
-    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
+    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : (controls.mode == 3 ? "spectral" : "circle"))));
 
     if (controls.help) {
         return "control help visible | h/? hide controls | wheel zoom | left-drag center | q quit";
@@ -748,15 +755,17 @@ std::string_view modeLabel(int mode) {
         return "auto";
     }
 
-    switch (mode % 4) {
+    switch (mode % 5) {
     case 0:
         return "bloom";
     case 1:
         return "tunnel";
     case 2:
         return "particles";
-    default:
+    case 3:
         return "spectral";
+    default:
+        return "circle";
     }
 }
 
@@ -975,7 +984,6 @@ int main(int argc, char** argv) {
             frame = drawNextFrame();
         }
 
-        renderer.clearText();
         if (showHud && showChrome) {
             if (controls.help) {
                 writeControlHelp(renderer, controls, latestStats);
