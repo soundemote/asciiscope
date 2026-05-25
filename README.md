@@ -203,6 +203,7 @@ Options:
 ```powershell
 .\build\Release\asciiscope.exe --help
 .\build\Release\asciiscope.exe --list-presets
+.\build\Release\asciiscope.exe --color-ramp
 .\build\Release\asciiscope.exe --preset ghost-spectral --reel --describe
 .\build\Release\asciiscope.exe --tour --seconds 16 --hold 2
 .\build\Release\asciiscope.exe --tour --tour-seconds 3 --seconds 12
@@ -278,6 +279,7 @@ bloom-reel      classic glyphs, neon palette, attractor bloom
 neon-tunnel     dense glyphs, neon palette, wide tunnel
 particle-storm  block glyphs, ember palette, high density particles
 ghost-spectral  wire glyphs, ice palette, wide spectral ribbon
+circle-cal      classic glyphs, neon palette, circle calibration trace
 ```
 
 ## future
