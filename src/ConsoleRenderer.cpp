@@ -261,22 +261,41 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
         if (config_.chrome) {
             out << '|';
         }
-        for (int x = 0; x < config_.width; ++x) {
+        for (int x = 0; x < config_.width;) {
             const auto cellIndex = static_cast<std::size_t>(index(x, y));
             const auto text = textCells_[cellIndex];
             const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
             if (text != ' ') {
                 if (config_.color) {
-                    out << ansiUiColor(age, config_.smoothColor) << text << "\x1b[0m";
+                    out << ansiUiColor(age, config_.smoothColor);
+                    while (x < config_.width) {
+                        const auto runIndex = static_cast<std::size_t>(index(x, y));
+                        if (textCells_[runIndex] == ' ' || textAges_[runIndex] != age) {
+                            break;
+                        }
+                        out << textCells_[runIndex];
+                        ++x;
+                    }
+                    out << "\x1b[0m";
                 } else {
-                    out << text;
+                    while (x < config_.width) {
+                        const auto runIndex = static_cast<std::size_t>(index(x, y));
+                        if (textCells_[runIndex] == ' ' || textAges_[runIndex] != age) {
+                            break;
+                        }
+                        out << textCells_[runIndex];
+                        ++x;
+                    }
                 }
             } else if (age <= config_.blackFloor) {
                 out << ' ';
+                ++x;
             } else if (config_.color) {
                 out << colorFor(age) << glyphFor(age) << "\x1b[0m";
+                ++x;
             } else {
                 out << glyphFor(age);
+                ++x;
             }
         }
         if (config_.chrome) {
