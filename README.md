@@ -185,6 +185,8 @@ Options:
 .\build\Release\asciiscope.exe --help
 .\build\Release\asciiscope.exe --list-presets
 .\build\Release\asciiscope.exe --preset ghost-spectral --reel --describe
+.\build\Release\asciiscope.exe --tour --seconds 16
+.\build\Release\asciiscope.exe --tour --tour-seconds 3 --seconds 12
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode spectral
@@ -221,6 +223,9 @@ envelopes are already alive when capture starts.
 `--reel` applies quick social-capture defaults: canvas-only, 30 FPS, 8 visible
 seconds, and 90 warmup frames. You can still override it with `--fps`,
 `--seconds`, `--frames`, or `--warmup`.
+
+`--tour` cycles bloom, tunnel, particles, and spectral looks in one canvas-only
+capture. Use `--tour-seconds` to choose how long each look stays on screen.
 
 Glyph styles:
 

@@ -207,6 +207,8 @@ void printHelp() {
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
       << "  --reel                 8s canvas capture defaults for social clips\n"
+      << "  --tour                 cycle the strongest looks in one capture take\n"
+      << "  --tour-seconds N       seconds per tour look, 1 to 30\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
       << "  --width N              canvas width, 40 to 220\n"
@@ -224,6 +226,7 @@ void printHelp() {
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
+      << "  asciiscope --tour --seconds 16\n"
       << "  asciiscope --preset ghost-spectral --reel --describe\n"
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
 }
@@ -238,6 +241,7 @@ void printPresets() {
       << "capture recipes\n\n"
       << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
+      << "  asciiscope --tour --seconds 16\n"
       << "  asciiscope --preset neon-tunnel --canvas-only --warmup 90 --seconds 8 --fps 30\n";
 }
 
@@ -304,6 +308,62 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
 
     controls.lastAdjustment = "preset";
     return true;
+}
+
+std::string_view tourCueName(int cue) {
+    switch (cue % 4) {
+    case 0:
+        return "tour bloom";
+    case 1:
+        return "tour tunnel";
+    case 2:
+        return "tour particles";
+    default:
+        return "tour spectral";
+    }
+}
+
+void applyTourCue(int cue, Controls& controls) {
+    switch (cue % 4) {
+    case 0:
+        controls.mode = 0;
+        controls.speed = 1.08;
+        controls.density = 1.2;
+        controls.zoom = 1.1;
+        controls.fade = 2;
+        controls.glyphStyle = 0;
+        controls.palette = 0;
+        break;
+    case 1:
+        controls.mode = 1;
+        controls.speed = 1.25;
+        controls.density = 1.15;
+        controls.zoom = 1.18;
+        controls.fade = 2;
+        controls.glyphStyle = 1;
+        controls.palette = 2;
+        break;
+    case 2:
+        controls.mode = 2;
+        controls.speed = 1.42;
+        controls.density = 1.65;
+        controls.zoom = 1.28;
+        controls.fade = 3;
+        controls.glyphStyle = 2;
+        controls.palette = 1;
+        break;
+    default:
+        controls.mode = 3;
+        controls.speed = 0.88;
+        controls.density = 1.3;
+        controls.zoom = 1.0;
+        controls.fade = 4;
+        controls.glyphStyle = 3;
+        controls.palette = 3;
+        break;
+    }
+
+    controls.lastAdjustment = std::string(tourCueName(cue));
 }
 
 void handleKey(int key, Controls& controls) {
@@ -590,7 +650,9 @@ void printLaunchDescription(const Controls& controls,
                             int height,
                             bool showChrome,
                             bool showHud,
-                            std::uint32_t seed) {
+                            std::uint32_t seed,
+                            bool tourMode,
+                            int tourSeconds) {
     std::cout
       << "asciiscope launch\n\n"
       << "  mode       " << modeLabel(controls.mode) << "\n"
@@ -598,6 +660,8 @@ void printLaunchDescription(const Controls& controls,
       << "  frames     " << (frameLimit == 0 ? std::string("unlimited") : std::to_string(frameLimit)) << "\n"
       << "  warmup     " << warmupFrames << "\n"
       << "  canvas     " << width << "x" << height << "\n"
+      << "  tour       " << (tourMode ? "on" : "off") << "\n"
+      << "  tour step  " << tourSeconds << "s\n"
       << "  speed      " << controls.speed << "\n"
       << "  density    " << controls.density << "\n"
       << "  zoom       " << controls.zoom << "\n"
@@ -631,8 +695,9 @@ int main(int argc, char** argv) {
     int warmupFrames = 0;
     std::uint32_t seed = 0xA5C115C0;
     const bool reelMode = hasArg(argc, argv, "--reel");
+    const bool tourMode = hasArg(argc, argv, "--tour");
     bool showHud = !hasArg(argc, argv, "--no-hud");
-    bool showChrome = !hasArg(argc, argv, "--canvas-only") && !reelMode;
+    bool showChrome = !hasArg(argc, argv, "--canvas-only") && !reelMode && !tourMode;
     std::string title = "ASCIISCOPE / SOEMDSP";
 
     if (const auto titleArg = argValue(argc, argv, "--title")) {
@@ -669,10 +734,17 @@ int main(int argc, char** argv) {
     if (hasArg(argc, argv, "--once")) {
         frameLimit = 90;
     }
-    const int fps = boundedIntOption(argc, argv, "--fps", reelMode ? 30 : 60, 1, 240);
+    const int fps = boundedIntOption(argc, argv, "--fps", (reelMode || tourMode) ? 30 : 60, 1, 240);
+    const int tourSeconds = boundedIntOption(argc, argv, "--tour-seconds", 4, 1, 30);
     if (reelMode) {
         frameLimit = fps * 8;
         controls.lastAdjustment = "reel";
+    }
+    if (tourMode) {
+        width = 128;
+        height = 36;
+        frameLimit = fps * tourSeconds * 4;
+        applyTourCue(0, controls);
     }
     if (const auto seconds = doubleValue(argc, argv, "--seconds")) {
         if (*seconds > 0.0) {
@@ -683,7 +755,7 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
-    warmupFrames = boundedIntOption(argc, argv, "--warmup", reelMode ? 90 : 0, 0, 3600);
+    warmupFrames = boundedIntOption(argc, argv, "--warmup", (reelMode || tourMode) ? 90 : 0, 0, 3600);
     if (warmupFrames > 0) {
         controls.lastAdjustment = "warmup cli";
     }
@@ -696,7 +768,7 @@ int main(int argc, char** argv) {
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
 
     if (hasArg(argc, argv, "--describe")) {
-        printLaunchDescription(controls, frameLimit, warmupFrames, fps, width, height, showChrome, showHud, seed);
+        printLaunchDescription(controls, frameLimit, warmupFrames, fps, width, height, showChrome, showHud, seed, tourMode, tourSeconds);
         return 0;
     }
 
@@ -711,6 +783,20 @@ int main(int argc, char** argv) {
     std::optional<asciiscope::SignalStats> latestStats;
     double visualFrame = 0.0;
     int presentedFrames = 0;
+    int activeTourCue = -1;
+
+    auto updateTourCue = [&]() {
+        if (!tourMode) {
+            return;
+        }
+
+        const int cueFrames = std::max(1, fps * tourSeconds);
+        const int cue = (presentedFrames / cueFrames) % 4;
+        if (cue != activeTourCue) {
+            applyTourCue(cue, controls);
+            activeTourCue = cue;
+        }
+    };
 
     auto drawNextFrame = [&]() {
         const int frame = static_cast<int>(visualFrame);
@@ -725,6 +811,7 @@ int main(int argc, char** argv) {
         return frame;
     };
 
+    updateTourCue();
     renderer.setColor(controls.color);
     renderer.setChrome(showChrome);
     renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
@@ -740,6 +827,7 @@ int main(int argc, char** argv) {
                      inputState
 #endif
         );
+        updateTourCue();
         renderer.setColor(controls.color);
         renderer.setChrome(showChrome);
         renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
