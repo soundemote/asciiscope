@@ -322,17 +322,17 @@ std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
     const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : 0));
 
     if (config_.palette % 4 == 1) {
-        constexpr std::string_view ember[] = { "\x1b[2;30m", "\x1b[2;31m", "\x1b[0;31m", "\x1b[1;33m", "\x1b[1;97m" };
+        constexpr std::string_view ember[] = { "\x1b[30m", "\x1b[2;31m", "\x1b[0;31m", "\x1b[1;33m", "\x1b[1;97m" };
         return std::string(ember[band]);
     }
 
     if (config_.palette % 4 == 2) {
-        constexpr std::string_view acid[] = { "\x1b[2;30m", "\x1b[2;32m", "\x1b[0;32m", "\x1b[1;33m", "\x1b[1;97m" };
+        constexpr std::string_view acid[] = { "\x1b[30m", "\x1b[2;32m", "\x1b[0;32m", "\x1b[1;33m", "\x1b[1;97m" };
         return std::string(acid[band]);
     }
 
     if (config_.palette % 4 == 3) {
-        constexpr std::string_view ice[] = { "\x1b[2;30m", "\x1b[2;34m", "\x1b[0;34m", "\x1b[1;37m", "\x1b[1;97m" };
+        constexpr std::string_view ice[] = { "\x1b[30m", "\x1b[2;34m", "\x1b[0;34m", "\x1b[1;37m", "\x1b[1;97m" };
         return std::string(ice[band]);
     }
 
@@ -345,7 +345,7 @@ std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
     if (age > config_.maxAge / 4) {
         return "\x1b[2;35m";
     }
-    return "\x1b[2;30m";
+    return "\x1b[30m";
 }
 
 } // namespace asciiscope

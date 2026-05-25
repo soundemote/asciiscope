@@ -13,7 +13,7 @@ struct SceneSettings {
     double zoom{ 1.0 };
     double centerX{ 0.0 };
     double centerY{ 0.0 };
-    double circleFrequencyHz{ 0.045 };
+    double circleFrequencyHz{ 1.25 };
     int fade{ 2 };
 };
 

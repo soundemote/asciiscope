@@ -274,13 +274,13 @@ struct Controls {
     bool paused{ false };
     bool help{ true };
     bool color{ true };
-    int mode{ -1 };
+    int mode{ 4 };
     double speed{ 1.0 };
     double density{ 1.0 };
     double zoom{ 1.0 };
     double centerX{ 0.0 };
     double centerY{ 0.0 };
-    double circleFrequencyHz{ 0.045 };
+    double circleFrequencyHz{ 1.25 };
     int fade{ 2 };
     int glyphStyle{ 0 };
     int palette{ 0 };
