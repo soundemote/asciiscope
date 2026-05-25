@@ -185,7 +185,7 @@ Options:
 .\build\Release\asciiscope.exe --help
 .\build\Release\asciiscope.exe --list-presets
 .\build\Release\asciiscope.exe --preset ghost-spectral --reel --describe
-.\build\Release\asciiscope.exe --tour --seconds 16
+.\build\Release\asciiscope.exe --tour --seconds 16 --hold 2
 .\build\Release\asciiscope.exe --tour --tour-seconds 3 --seconds 12
 .\build\Release\asciiscope.exe --no-color
 .\build\Release\asciiscope.exe --once
@@ -217,6 +217,9 @@ control.
 
 `--warmup` draws hidden frames before the first visible frame, so trails and
 envelopes are already alive when capture starts.
+
+`--hold` keeps the final frame visible before the terminal is restored. This is
+useful when stopping a recording or checking the last frame of a bounded take.
 
 `--canvas-only` hides the title, border, and footer for clean OBS crops.
 

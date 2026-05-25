@@ -204,6 +204,7 @@ void printHelp() {
       << "  --frames N             run exactly N frames\n"
       << "  --seconds N            run for N seconds at the selected fps\n"
       << "  --warmup N             draw N hidden frames before recording\n"
+      << "  --hold N               keep final frame visible for N seconds\n"
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
       << "  --reel                 8s canvas capture defaults for social clips\n"
@@ -226,7 +227,7 @@ void printHelp() {
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
-      << "  asciiscope --tour --seconds 16\n"
+      << "  asciiscope --tour --seconds 16 --hold 2\n"
       << "  asciiscope --preset ghost-spectral --reel --describe\n"
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
 }
@@ -241,7 +242,7 @@ void printPresets() {
       << "capture recipes\n\n"
       << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
-      << "  asciiscope --tour --seconds 16\n"
+      << "  asciiscope --tour --seconds 16 --hold 2\n"
       << "  asciiscope --preset neon-tunnel --canvas-only --warmup 90 --seconds 8 --fps 30\n";
 }
 
@@ -646,6 +647,7 @@ void printLaunchDescription(const Controls& controls,
                             int frameLimit,
                             int warmupFrames,
                             int fps,
+                            int holdSeconds,
                             int width,
                             int height,
                             bool showChrome,
@@ -659,6 +661,7 @@ void printLaunchDescription(const Controls& controls,
       << "  fps        " << fps << "\n"
       << "  frames     " << (frameLimit == 0 ? std::string("unlimited") : std::to_string(frameLimit)) << "\n"
       << "  warmup     " << warmupFrames << "\n"
+      << "  hold       " << holdSeconds << "s\n"
       << "  canvas     " << width << "x" << height << "\n"
       << "  tour       " << (tourMode ? "on" : "off") << "\n"
       << "  tour step  " << tourSeconds << "s\n"
@@ -763,12 +766,13 @@ int main(int argc, char** argv) {
         seed = *seedArg;
         controls.lastAdjustment = "seed cli";
     }
+    const int holdSeconds = boundedIntOption(argc, argv, "--hold", 0, 0, 120);
     const auto frameDelay = std::chrono::milliseconds(std::max(1, 1000 / fps));
     width = boundedIntOption(argc, argv, "--width", width, 40, 220);
     height = boundedIntOption(argc, argv, "--height", height, 16, 80);
 
     if (hasArg(argc, argv, "--describe")) {
-        printLaunchDescription(controls, frameLimit, warmupFrames, fps, width, height, showChrome, showHud, seed, tourMode, tourSeconds);
+        printLaunchDescription(controls, frameLimit, warmupFrames, fps, holdSeconds, width, height, showChrome, showHud, seed, tourMode, tourSeconds);
         return 0;
     }
 
@@ -848,6 +852,10 @@ int main(int argc, char** argv) {
         renderer.present(title, scene.modeName(frame, controls.mode), footer, frame);
         std::this_thread::sleep_for(frameDelay);
         ++presentedFrames;
+    }
+
+    if (holdSeconds > 0) {
+        std::this_thread::sleep_for(std::chrono::seconds(holdSeconds));
     }
 
 #ifdef _WIN32
