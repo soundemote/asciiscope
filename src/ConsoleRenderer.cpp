@@ -93,16 +93,30 @@ void writeTextToBuffer(std::vector<CHAR_INFO>& buffer, int width, int x, int y, 
 
 ConsoleRenderer::ConsoleRenderer(Config config)
   : config_(config)
-  , cells_(static_cast<std::size_t>(config.width * config.height), 0) {}
+  , cells_(static_cast<std::size_t>(config.width * config.height), 0)
+  , textCells_(static_cast<std::size_t>(config.width * config.height), ' ')
+  , textAges_(static_cast<std::size_t>(config.width * config.height), 0) {}
 
 void ConsoleRenderer::beginFrame() {
     if (cells_.size() != static_cast<std::size_t>(config_.width * config_.height)) {
         cells_.assign(static_cast<std::size_t>(config_.width * config_.height), 0);
     }
+    if (textCells_.size() != static_cast<std::size_t>(config_.width * config_.height)) {
+        textCells_.assign(static_cast<std::size_t>(config_.width * config_.height), ' ');
+        textAges_.assign(static_cast<std::size_t>(config_.width * config_.height), 0);
+    }
+
+    clearText();
 }
 
 void ConsoleRenderer::clear() {
     std::fill(cells_.begin(), cells_.end(), 0);
+    clearText();
+}
+
+void ConsoleRenderer::clearText() {
+    std::fill(textCells_.begin(), textCells_.end(), ' ');
+    std::fill(textAges_.begin(), textAges_.end(), 0);
 }
 
 void ConsoleRenderer::fade(int amount) {
@@ -132,8 +146,10 @@ void ConsoleRenderer::writeText(int x, int y, std::string_view text, std::uint8_
 
     for (std::size_t i = 0; i < text.size(); ++i) {
         const int px = x + static_cast<int>(i);
-        if (px >= 0 && px < config_.width && text[i] != ' ') {
-            cells_[static_cast<std::size_t>(index(px, y))] = age;
+        if (px >= 0 && px < config_.width) {
+            const auto cellIndex = static_cast<std::size_t>(index(px, y));
+            textCells_[cellIndex] = text[i];
+            textAges_[cellIndex] = age;
         }
     }
 }
@@ -158,8 +174,16 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
             out << '|';
         }
         for (int x = 0; x < config_.width; ++x) {
-            const auto age = cells_[static_cast<std::size_t>(index(x, y))];
-            if (age == 0) {
+            const auto cellIndex = static_cast<std::size_t>(index(x, y));
+            const auto text = textCells_[cellIndex];
+            const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
+            if (text != ' ') {
+                if (config_.color) {
+                    out << colorFor(age) << text << "\x1b[0m";
+                } else {
+                    out << text;
+                }
+            } else if (age == 0) {
                 out << ' ';
             } else if (config_.color) {
                 out << colorFor(age) << glyphFor(age) << "\x1b[0m";
@@ -236,9 +260,11 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
         }
 
         for (int x = 0; x < config_.width; ++x) {
-            const auto age = cells_[static_cast<std::size_t>(index(x, y))];
+            const auto cellIndex = static_cast<std::size_t>(index(x, y));
+            const auto text = textCells_[cellIndex];
+            const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
             const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + outX);
-            buffer[outIndex].Char.AsciiChar = age == 0 ? ' ' : glyphFor(age);
+            buffer[outIndex].Char.AsciiChar = text != ' ' ? text : (age == 0 ? ' ' : glyphFor(age));
             buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color, config_.palette);
         }
     }

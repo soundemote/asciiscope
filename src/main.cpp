@@ -229,7 +229,18 @@ void printHelp() {
       << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --tour --seconds 16 --hold 2\n"
       << "  asciiscope --preset ghost-spectral --reel --describe\n"
-      << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
+      << "  asciiscope --mode spectral --seconds 8 --fps 30\n\n"
+      << "Live controls:\n"
+      << "  h or ?                hide/show the in-canvas control panel\n"
+      << "  1 2 3 4 / 0           modes / automatic mode rotation\n"
+      << "  Space                 pause or resume\n"
+      << "  + - or Up Down        speed\n"
+      << "  [ ] or Left Right     density\n"
+      << "  Mouse wheel or z Z    zoom without clearing trails\n"
+      << "  < >                   trail length\n"
+      << "  g / p / c             glyphs / palette / color\n"
+      << "  r or x                clear trails\n"
+      << "  q or Esc              quit\n";
 }
 
 void printPresets() {
@@ -249,7 +260,7 @@ void printPresets() {
 struct Controls {
     bool running{ true };
     bool paused{ false };
-    bool help{ false };
+    bool help{ true };
     bool color{ true };
     int mode{ -1 };
     double speed{ 1.0 };
@@ -262,6 +273,64 @@ struct Controls {
     std::string lastAdjustment{ "ready" };
     std::string inputStatus{ "input pending" };
 };
+
+void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
+                      const Controls& controls,
+                      const std::optional<asciiscope::SignalStats>& stats) {
+    const int width = renderer.width();
+    if (width < 40) {
+        return;
+    }
+
+    char line[128]{};
+    const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
+    const int x = 2;
+    int y = 1;
+
+    renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
+    renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  0 auto", 11);
+    renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel or z/Z zoom", 11);
+    renderer.writeText(x, y++, "[/] or left/right density  </> trails  g glyphs  p palette", 11);
+    renderer.writeText(x, y++, "c color  r/x clear trails", 11);
+
+    std::snprintf(line,
+                  sizeof(line),
+                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  trail %d",
+                  mode,
+                  controls.speed,
+                  controls.density,
+                  controls.zoom,
+                  controls.fade);
+    renderer.writeText(x, y++, line, 13);
+
+    std::snprintf(line,
+                  sizeof(line),
+                  "glyphs %-7.*s palette %-5.*s color %s  last %s",
+                  static_cast<int>(glyphStyleName(controls.glyphStyle).size()),
+                  glyphStyleName(controls.glyphStyle).data(),
+                  static_cast<int>(paletteName(controls.palette).size()),
+                  paletteName(controls.palette).data(),
+                  controls.color ? "on" : "off",
+                  controls.lastAdjustment.c_str());
+    renderer.writeText(x, y++, line, 13);
+
+    if (stats.has_value()) {
+        std::snprintf(line,
+                      sizeof(line),
+                      "signal rms %.2f  peak %.2f  min %.2f  max %.2f",
+                      stats->rms,
+                      stats->peak,
+                      stats->min,
+                      stats->max);
+        renderer.writeText(x, y, line, 10);
+    }
+}
+
+void writeControlHint(asciiscope::ConsoleRenderer& renderer) {
+    if (renderer.width() >= 40) {
+        renderer.writeText(2, 1, "h/? controls", 8);
+    }
+}
 
 bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, int& width, int& height) {
     frameLimit = 240;
@@ -583,7 +652,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
 
     if (controls.help) {
-        return "1/2/3/4 modes  0 auto  space pause  +/- speed  wheel/z/Z zoom  [/]/arrows density  </> trails  g glyphs  p palette  c color  r clear  q quit";
+        return "control help visible | h/? hide controls | wheel zoom keeps trails | q quit";
     }
 
     if (stats.has_value()) {
@@ -846,6 +915,15 @@ int main(int argc, char** argv) {
 
         if (!controls.paused) {
             frame = drawNextFrame();
+        }
+
+        renderer.clearText();
+        if (showHud && showChrome) {
+            if (controls.help) {
+                writeControlHelp(renderer, controls, latestStats);
+            } else {
+                writeControlHint(renderer);
+            }
         }
 
         const std::string footer = showHud && showChrome ? footerFor(controls, latestStats) : std::string{};

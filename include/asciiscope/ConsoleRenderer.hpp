@@ -23,6 +23,7 @@ class ConsoleRenderer {
 
     void beginFrame();
     void clear();
+    void clearText();
     void fade(int amount = 1);
     void plot(double x, double y, double intensity = 1.0);
     void writeText(int x, int y, std::string_view text, std::uint8_t age);
@@ -47,6 +48,8 @@ class ConsoleRenderer {
 
     Config config_;
     std::vector<std::uint8_t> cells_;
+    std::vector<char> textCells_;
+    std::vector<std::uint8_t> textAges_;
 };
 
 } // namespace asciiscope

@@ -25,6 +25,10 @@ cmd /k "cd /d C:\Users\argit\Desktop\asciiscope && build\Release\asciiscope.exe"
 
 ## live controls
 
+The normal console app opens with an in-canvas control panel. Press `h` or `?`
+to hide or show it; capture modes such as `--reel`, `--tour`, and
+`--canvas-only` stay clean.
+
 ```markdown
 1 2 3 4      lock bloom / tunnel / particle / spectral mode
 0            return to automatic mode rotation
