@@ -37,7 +37,7 @@ Space        pause or resume
 Up Down      speed up or slow down
 [ ]          reduce or increase signal density
 Left Right   reduce or increase signal density
-Mouse wheel  zoom without clearing current trails
+Mouse wheel  deep zoom without clearing current trails
 z Z          keyboard zoom out / in
 < >          shorter or longer trails
 g            cycle glyph style

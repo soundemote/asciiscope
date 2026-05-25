@@ -23,6 +23,9 @@
 
 namespace {
 
+constexpr double kMinZoom = 0.25;
+constexpr double kMaxZoom = 16.0;
+
 bool hasArg(int argc, char** argv, std::string_view target) {
     for (int i = 1; i < argc; ++i) {
         if (argv[i] == target) {
@@ -216,7 +219,7 @@ void printHelp() {
       << "  --height N             canvas height, 16 to 80\n"
       << "  --speed N              visual speed, 0.15 to 4.0\n"
       << "  --density N            signal density, 0.25 to 2.0\n"
-      << "  --zoom N               visual zoom, 0.25 to 4.0\n"
+      << "  --zoom N               visual zoom, 0.25 to 16.0\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"
@@ -438,7 +441,7 @@ void applyTourCue(int cue, Controls& controls) {
 
 void handleKey(int key, Controls& controls) {
     if (key == 'Z') {
-        controls.zoom = std::min(4.0, controls.zoom + 0.08);
+        controls.zoom = std::min(kMaxZoom, controls.zoom + 0.12);
         controls.lastAdjustment = "zoom";
         return;
     }
@@ -503,7 +506,7 @@ void handleKey(int key, Controls& controls) {
         controls.lastAdjustment = "trail";
         break;
     case 'z':
-        controls.zoom = std::max(0.25, controls.zoom - 0.08);
+        controls.zoom = std::max(kMinZoom, controls.zoom - 0.12);
         controls.lastAdjustment = "zoom";
         break;
     case 'c':
@@ -533,8 +536,8 @@ void handleKey(int key, Controls& controls) {
 }
 
 void nudgeZoom(Controls& controls, int direction) {
-    const double ratio = direction > 0 ? 1.08 : 1.0 / 1.08;
-    controls.zoom = std::clamp(controls.zoom * ratio, 0.25, 4.0);
+    const double ratio = direction > 0 ? 1.18 : 1.0 / 1.18;
+    controls.zoom = std::clamp(controls.zoom * ratio, kMinZoom, kMaxZoom);
     controls.lastAdjustment = "mousewheel zoom";
 }
 
@@ -783,7 +786,7 @@ int main(int argc, char** argv) {
     controls.color = !hasArg(argc, argv, "--no-color");
     controls.speed = boundedDoubleOption(argc, argv, "--speed", controls.speed, 0.15, 4.0);
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
-    controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, 0.25, 4.0);
+    controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, kMinZoom, kMaxZoom);
     controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
     if (const auto glyphArg = argValue(argc, argv, "--glyphs")) {
         if (const auto glyphStyle = glyphStyleFromName(*glyphArg)) {
