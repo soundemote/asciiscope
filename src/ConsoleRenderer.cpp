@@ -18,10 +18,39 @@ namespace asciiscope {
 
 namespace {
 
+struct Rgb {
+    int r{};
+    int g{};
+    int b{};
+};
+
 std::string ansiRgb(int r, int g, int b) {
     char code[32]{};
     std::snprintf(code, sizeof(code), "\x1b[38;2;%d;%d;%dm", r, g, b);
     return code;
+}
+
+Rgb mixRgb(Rgb a, Rgb b, double t) {
+    const auto mix = [t](int from, int to) {
+        return static_cast<int>(std::lround(static_cast<double>(from) + (static_cast<double>(to - from) * t)));
+    };
+    return { mix(a.r, b.r), mix(a.g, b.g), mix(a.b, b.b) };
+}
+
+Rgb gradientRgb(double t, std::initializer_list<Rgb> stops) {
+    const auto count = static_cast<int>(stops.size());
+    if (count <= 0) {
+        return {};
+    }
+    if (count == 1) {
+        return *stops.begin();
+    }
+
+    const double scaled = std::clamp(t, 0.0, 1.0) * static_cast<double>(count - 1);
+    const int index = std::clamp(static_cast<int>(std::floor(scaled)), 0, count - 2);
+    const double local = scaled - static_cast<double>(index);
+    const auto* first = stops.begin();
+    return mixRgb(*(first + index), *(first + index + 1), local * local * (3.0 - 2.0 * local));
 }
 
 std::string ansiUiColor(std::uint8_t age, bool smoothColor) {
@@ -52,30 +81,19 @@ std::string ansiUiColor(std::uint8_t age, bool smoothColor) {
 
 std::string smoothRgbForAge(std::uint8_t age, int maxAge, int palette) {
     const double t = std::clamp(static_cast<double>(age) / static_cast<double>(std::max(1, maxAge)), 0.0, 1.0);
-    const double glow = t * t;
-    int r{};
-    int g{};
-    int b{};
+    Rgb rgb{};
 
     if (palette % 4 == 1) {
-        r = static_cast<int>(std::lround(255.0 * glow));
-        g = static_cast<int>(std::lround(190.0 * std::pow(t, 2.35)));
-        b = static_cast<int>(std::lround(82.0 * std::pow(t, 3.2)));
+        rgb = gradientRgb(std::pow(t, 1.45), { { 0, 0, 0 }, { 45, 3, 12 }, { 150, 20, 16 }, { 255, 150, 36 }, { 255, 250, 220 } });
     } else if (palette % 4 == 2) {
-        r = static_cast<int>(std::lround(220.0 * std::pow(t, 3.0)));
-        g = static_cast<int>(std::lround(255.0 * glow));
-        b = static_cast<int>(std::lround(68.0 * std::pow(t, 2.7)));
+        rgb = gradientRgb(std::pow(t, 1.35), { { 0, 0, 0 }, { 10, 32, 5 }, { 30, 120, 32 }, { 170, 255, 62 }, { 255, 255, 220 } });
     } else if (palette % 4 == 3) {
-        r = static_cast<int>(std::lround(245.0 * std::pow(t, 4.0)));
-        g = static_cast<int>(std::lround(255.0 * std::pow(t, 2.2)));
-        b = static_cast<int>(std::lround(255.0 * glow));
+        rgb = gradientRgb(std::pow(t, 1.25), { { 0, 0, 0 }, { 4, 13, 48 }, { 14, 88, 150 }, { 120, 230, 255 }, { 250, 253, 255 } });
     } else {
-        r = static_cast<int>(std::lround((255.0 * std::pow(t, 5.0)) + (145.0 * std::pow(t, 1.7) * (1.0 - t))));
-        g = static_cast<int>(std::lround((255.0 * std::pow(t, 2.6)) + (80.0 * t * (1.0 - t))));
-        b = static_cast<int>(std::lround((255.0 * std::pow(t, 2.15)) + (55.0 * std::sqrt(t) * (1.0 - t))));
+        rgb = gradientRgb(std::pow(t, 1.18), { { 0, 0, 0 }, { 18, 0, 34 }, { 110, 18, 152 }, { 42, 220, 235 }, { 255, 255, 255 } });
     }
 
-    return ansiRgb(std::clamp(r, 0, 255), std::clamp(g, 0, 255), std::clamp(b, 0, 255));
+    return ansiRgb(std::clamp(rgb.r, 0, 255), std::clamp(rgb.g, 0, 255), std::clamp(rgb.b, 0, 255));
 }
 
 #ifdef _WIN32
