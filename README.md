@@ -196,6 +196,7 @@ Options:
 .\build\Release\asciiscope.exe --mode tunnel --glyphs dense
 .\build\Release\asciiscope.exe --mode particles --palette ember
 .\build\Release\asciiscope.exe --preset ghost-spectral --canvas-only --fps 30
+.\build\Release\asciiscope.exe --preset particle-storm --reel
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
@@ -214,6 +215,10 @@ control.
 envelopes are already alive when capture starts.
 
 `--canvas-only` hides the title, border, and footer for clean OBS crops.
+
+`--reel` applies quick social-capture defaults: canvas-only, 30 FPS, 8 visible
+seconds, and 90 warmup frames. You can still override it with `--fps`,
+`--seconds`, `--frames`, or `--warmup`.
 
 Glyph styles:
 

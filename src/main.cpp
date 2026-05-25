@@ -204,6 +204,7 @@ void printHelp() {
       << "  --warmup N             draw N hidden frames before recording\n"
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
+      << "  --reel                 8s canvas capture defaults for social clips\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral\n"
       << "  --width N              canvas width, 40 to 220\n"
@@ -220,7 +221,7 @@ void printHelp() {
       << "  --no-color             monochrome output\n\n"
       << "Examples:\n"
       << "  asciiscope --preset neon-tunnel\n"
-      << "  asciiscope --preset particle-storm --zoom 1.6\n"
+      << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
 }
 
@@ -564,8 +565,9 @@ int main(int argc, char** argv) {
     int height = 34;
     int warmupFrames = 0;
     std::uint32_t seed = 0xA5C115C0;
+    const bool reelMode = hasArg(argc, argv, "--reel");
     bool showHud = !hasArg(argc, argv, "--no-hud");
-    bool showChrome = !hasArg(argc, argv, "--canvas-only");
+    bool showChrome = !hasArg(argc, argv, "--canvas-only") && !reelMode;
     std::string title = "ASCIISCOPE / SOEMDSP";
 
     if (const auto titleArg = argValue(argc, argv, "--title")) {
@@ -602,7 +604,11 @@ int main(int argc, char** argv) {
     if (hasArg(argc, argv, "--once")) {
         frameLimit = 90;
     }
-    const int fps = boundedIntOption(argc, argv, "--fps", 60, 1, 240);
+    const int fps = boundedIntOption(argc, argv, "--fps", reelMode ? 30 : 60, 1, 240);
+    if (reelMode) {
+        frameLimit = fps * 8;
+        controls.lastAdjustment = "reel";
+    }
     if (const auto seconds = doubleValue(argc, argv, "--seconds")) {
         if (*seconds > 0.0) {
             frameLimit = std::clamp(static_cast<int>((*seconds * static_cast<double>(fps)) + 0.999), 1, 864000);
@@ -612,7 +618,7 @@ int main(int argc, char** argv) {
     if (const auto frames = positiveIntValue(argc, argv, "--frames")) {
         frameLimit = *frames;
     }
-    warmupFrames = boundedIntOption(argc, argv, "--warmup", 0, 0, 3600);
+    warmupFrames = boundedIntOption(argc, argv, "--warmup", reelMode ? 90 : 0, 0, 3600);
     if (warmupFrames > 0) {
         controls.lastAdjustment = "warmup cli";
     }
