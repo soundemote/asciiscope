@@ -271,7 +271,8 @@ void printPresets() {
       << "  bloom-reel      classic glyphs | neon palette | attractor bloom\n"
       << "  neon-tunnel     dense glyphs   | neon palette | wide phasor tunnel\n"
       << "  particle-storm  block glyphs   | ember palette | high density particles\n"
-      << "  ghost-spectral  wire glyphs    | ice palette | wide spectral ribbon\n\n"
+      << "  ghost-spectral  wire glyphs    | ice palette | wide spectral ribbon\n"
+      << "  circle-cal      classic glyphs | neon palette | circle calibration trace\n\n"
       << "capture recipes\n\n"
       << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
@@ -441,6 +442,17 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.palette = 3;
         width = 128;
         height = 36;
+    } else if (preset == "circle-cal" || preset == "circle-calibration" || preset == "circle") {
+        controls.mode = 4;
+        controls.speed = 1.0;
+        controls.density = 1.0;
+        controls.zoom = 1.0;
+        controls.fade = 1;
+        controls.glyphStyle = 0;
+        controls.palette = 0;
+        controls.circleFrequencyHz = 1.25;
+        controls.brightness = 1.0;
+        controls.blackFloor = 0;
     } else {
         frameLimit = 0;
         return false;

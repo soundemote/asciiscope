@@ -148,7 +148,7 @@ pluck/noise particle field
 spectral ribbon
 // vertical signal energy bars with flowing phase motion
 
-slow sin/cos circle
+circle calibration trace
 // one moving point traces a circle and leaves an ASCII trail behind it
 ```
 
@@ -223,6 +223,7 @@ Options:
 .\build\Release\asciiscope.exe --preset ghost-spectral --canvas-only --fps 30
 .\build\Release\asciiscope.exe --preset particle-storm --reel
 .\build\Release\asciiscope.exe --preset neon-tunnel
+.\build\Release\asciiscope.exe --preset circle-calibration
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
 ```
