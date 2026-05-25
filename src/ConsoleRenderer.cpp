@@ -23,7 +23,7 @@ WORD attributeForAge(std::uint8_t age, int maxAge, bool color, int palette) {
         return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
     }
 
-    const int band = age > maxAge * 3 / 4 ? 4 : (age > maxAge / 2 ? 3 : (age > maxAge / 4 ? 2 : (age > maxAge / 8 ? 1 : 0)));
+    const int band = age > maxAge * 3 / 4 ? 4 : (age > maxAge / 2 ? 3 : (age > maxAge / 4 ? 2 : 0));
 
     if (palette % 4 == 1) {
         constexpr WORD ember[] = {
@@ -66,9 +66,6 @@ WORD attributeForAge(std::uint8_t age, int maxAge, bool color, int palette) {
     }
     if (age > maxAge / 4) {
         return FOREGROUND_RED | FOREGROUND_BLUE;
-    }
-    if (age > maxAge / 8) {
-        return FOREGROUND_BLUE;
     }
     return 0;
 }
@@ -322,7 +319,7 @@ char ConsoleRenderer::glyphFor(std::uint8_t age) const noexcept {
 }
 
 std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
-    const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : (age > config_.maxAge / 8 ? 1 : 0)));
+    const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : 0));
 
     if (config_.palette % 4 == 1) {
         constexpr std::string_view ember[] = { "\x1b[2;30m", "\x1b[2;31m", "\x1b[0;31m", "\x1b[1;33m", "\x1b[1;97m" };
@@ -347,9 +344,6 @@ std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
     }
     if (age > config_.maxAge / 4) {
         return "\x1b[2;35m";
-    }
-    if (age > config_.maxAge / 8) {
-        return "\x1b[2;34m";
     }
     return "\x1b[2;30m";
 }
