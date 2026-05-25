@@ -141,8 +141,8 @@ pluck/noise particle field
 spectral ribbon
 // vertical signal energy bars with flowing phase motion
 
-sin/cos ascii circle
-// pure circular diagnostic trace made from fun terminal characters
+slow sin/cos circle
+// one moving point traces a circle and leaves an ASCII trail behind it
 ```
 
 ## soemdsp objects currently used

@@ -73,7 +73,7 @@ std::string_view AnimationScene::modeName(int frame, int overrideMode) const noe
     case 3:
         return "spectral ribbon";
     default:
-        return "sincos ascii circle";
+        return "slow sincos circle";
     }
 }
 
@@ -159,37 +159,33 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
 }
 
 void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
-    constexpr std::string_view glyphs{ "@*oO+x=:. " };
-    const double phase = frame.timeSeconds * 0.42;
-    const double pulse = source.stats.peak * 0.16 + std::sin(frame.timeSeconds * soemdsp::constant::kTAU * 0.23) * 0.04;
-    const double radius = std::clamp(0.46 + pulse, 0.25, 0.72);
+    constexpr std::string_view glyphs{ "@#%*+=:. " };
+    constexpr int tailPoints = 112;
+    const double circleHz = 0.045;
+    const double headAngle = frame.timeSeconds * circleHz * soemdsp::constant::kTAU;
+    const double radius = std::clamp(0.58 + source.stats.rms * 0.08, 0.34, 0.72);
+    const double tailRadians = soemdsp::constant::kTAU * 0.62;
 
-    for (int ring = 0; ring < 4; ++ring) {
-        const double ringRadius = radius + static_cast<double>(ring) * 0.035;
-        const double ringPhase = phase * (1.0 + static_cast<double>(ring) * 0.18);
-        const double intensity = 0.92 - static_cast<double>(ring) * 0.15;
+    for (int i = tailPoints - 1; i >= 0; --i) {
+        const double trail = static_cast<double>(i) / static_cast<double>(tailPoints - 1);
+        const double angle = headAngle - trail * tailRadians;
+        const double x = std::cos(angle) * radius;
+        const double y = std::sin(angle) * radius;
+        const double intensity = 1.0 - trail * 0.78;
+        plotView(renderer_, x, y, intensity, settings);
 
-        for (int i = 0; i < 144; ++i) {
-            const auto& s = sampleAt(source, static_cast<std::size_t>(i * 31 + ring * 127));
-            const double p = static_cast<double>(i) / 144.0;
-            const double wobble = std::sin((p * 8.0 + s.lfo * 0.2 + frame.timeSeconds * 0.6) * soemdsp::constant::kTAU) * 0.012;
-            const double angle = p * soemdsp::constant::kTAU + ringPhase + s.noise * 0.01;
-            const double x = std::cos(angle) * (ringRadius + wobble);
-            const double y = std::sin(angle) * (ringRadius + wobble);
-            plotView(renderer_, x, y, intensity + s.pulse * 0.25, settings);
-
-            if (i % 3 == 0) {
-                const auto glyphIndex = static_cast<std::size_t>((i / 3 + ring + static_cast<int>(frame.frameIndex / 4)) % static_cast<int>(glyphs.size()));
-                const char glyph[2]{ glyphs[glyphIndex], '\0' };
-                renderer_.writeText(gridX(renderer_, x, settings), gridY(renderer_, y, settings), glyph, 8 + static_cast<std::uint8_t>(ring));
-            }
+        if (i % 4 == 0) {
+            const auto glyphIndex = static_cast<std::size_t>(std::clamp<int>(
+              static_cast<int>(trail * static_cast<double>(glyphs.size() - 1)), 0, static_cast<int>(glyphs.size() - 1)));
+            const char glyph[2]{ glyphs[glyphIndex], '\0' };
+            const auto age = static_cast<std::uint8_t>(std::clamp<int>(13 - static_cast<int>(trail * 10.0), 3, 13));
+            renderer_.writeText(gridX(renderer_, x, settings), gridY(renderer_, y, settings), glyph, age);
         }
     }
 
-    const double markerAngle = phase * soemdsp::constant::kTAU;
-    const double mx = std::cos(markerAngle) * radius;
-    const double my = std::sin(markerAngle) * radius;
-    renderer_.writeText(gridX(renderer_, mx, settings), gridY(renderer_, my, settings), "SOEM", 13);
+    const double headX = std::cos(headAngle) * radius;
+    const double headY = std::sin(headAngle) * radius;
+    renderer_.writeText(gridX(renderer_, headX, settings), gridY(renderer_, headY, settings), "@", 13);
 }
 
 } // namespace asciiscope
