@@ -24,6 +24,32 @@ std::string ansiRgb(int r, int g, int b) {
     return code;
 }
 
+std::string ansiUiColor(std::uint8_t age, bool smoothColor) {
+    if (!smoothColor) {
+        if (age >= 13) {
+            return "\x1b[1;97m";
+        }
+        if (age >= 11) {
+            return "\x1b[1;36m";
+        }
+        if (age >= 9) {
+            return "\x1b[0;37m";
+        }
+        return "\x1b[90m";
+    }
+
+    if (age >= 13) {
+        return ansiRgb(248, 252, 255);
+    }
+    if (age >= 11) {
+        return ansiRgb(142, 235, 245);
+    }
+    if (age >= 9) {
+        return ansiRgb(174, 186, 206);
+    }
+    return ansiRgb(92, 106, 132);
+}
+
 std::string smoothRgbForAge(std::uint8_t age, int maxAge, int palette) {
     const double t = std::clamp(static_cast<double>(age) / static_cast<double>(std::max(1, maxAge)), 0.0, 1.0);
     const double glow = t * t;
@@ -53,6 +79,22 @@ std::string smoothRgbForAge(std::uint8_t age, int maxAge, int palette) {
 }
 
 #ifdef _WIN32
+WORD uiAttributeForAge(std::uint8_t age, bool color) {
+    if (!color) {
+        return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+    }
+    if (age >= 13) {
+        return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+    }
+    if (age >= 11) {
+        return FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY;
+    }
+    if (age >= 9) {
+        return FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+    }
+    return FOREGROUND_BLUE | FOREGROUND_GREEN;
+}
+
 void enableVirtualTerminal(HANDLE output) {
     DWORD mode{};
     if (!GetConsoleMode(output, &mode)) {
@@ -225,7 +267,7 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
             const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
             if (text != ' ') {
                 if (config_.color) {
-                    out << colorFor(age) << text << "\x1b[0m";
+                    out << ansiUiColor(age, config_.smoothColor) << text << "\x1b[0m";
                 } else {
                     out << text;
                 }
@@ -317,7 +359,7 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
             const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
             const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + outX);
             buffer[outIndex].Char.AsciiChar = text != ' ' ? text : (age <= config_.blackFloor ? ' ' : glyphFor(age));
-            buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color, config_.palette);
+            buffer[outIndex].Attributes = text != ' ' ? uiAttributeForAge(age, config_.color) : attributeForAge(age, config_.maxAge, config_.color, config_.palette);
         }
     }
 
