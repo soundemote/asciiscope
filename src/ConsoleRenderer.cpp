@@ -183,7 +183,9 @@ ConsoleRenderer::ConsoleRenderer(Config config)
   : config_(config)
   , cells_(static_cast<std::size_t>(config.width * config.height), 0)
   , textCells_(static_cast<std::size_t>(config.width * config.height), ' ')
-  , textAges_(static_cast<std::size_t>(config.width * config.height), 0) {}
+  , textAges_(static_cast<std::size_t>(config.width * config.height), 0) {
+    rebuildColorCache();
+}
 
 void ConsoleRenderer::beginFrame() {
     if (cells_.size() != static_cast<std::size_t>(config_.width * config_.height)) {
@@ -418,6 +420,20 @@ void ConsoleRenderer::setGlyphRamp(std::string_view glyphRamp) {
     }
 }
 
+void ConsoleRenderer::setSmoothColor(bool enabled) {
+    if (config_.smoothColor != enabled) {
+        config_.smoothColor = enabled;
+        rebuildColorCache();
+    }
+}
+
+void ConsoleRenderer::setPalette(int palette) {
+    if (config_.palette != palette) {
+        config_.palette = palette;
+        rebuildColorCache();
+    }
+}
+
 int ConsoleRenderer::index(int x, int y) const noexcept {
     return y * config_.width + x;
 }
@@ -428,38 +444,38 @@ char ConsoleRenderer::glyphFor(std::uint8_t age) const noexcept {
     return ramp[static_cast<std::size_t>(scaled)];
 }
 
-std::string ConsoleRenderer::colorFor(std::uint8_t age) const {
-    if (config_.smoothColor) {
-        return smoothRgbForAge(age, config_.maxAge, config_.palette);
-    }
+std::string_view ConsoleRenderer::colorFor(std::uint8_t age) const {
+    return colorCache_[std::clamp<std::size_t>(age, 0, colorCache_.size() - 1)];
+}
 
-    const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : 0));
+void ConsoleRenderer::rebuildColorCache() {
+    colorCache_.assign(static_cast<std::size_t>(std::max(1, config_.maxAge) + 1), "\x1b[30m");
 
-    if (config_.palette % 4 == 1) {
-        constexpr std::string_view ember[] = { "\x1b[30m", "\x1b[2;31m", "\x1b[0;31m", "\x1b[1;33m", "\x1b[1;97m" };
-        return std::string(ember[band]);
-    }
+    for (int age = 0; age <= config_.maxAge; ++age) {
+        if (config_.smoothColor) {
+            colorCache_[static_cast<std::size_t>(age)] = smoothRgbForAge(static_cast<std::uint8_t>(age), config_.maxAge, config_.palette);
+            continue;
+        }
 
-    if (config_.palette % 4 == 2) {
-        constexpr std::string_view acid[] = { "\x1b[30m", "\x1b[2;32m", "\x1b[0;32m", "\x1b[1;33m", "\x1b[1;97m" };
-        return std::string(acid[band]);
-    }
+        const int band = age > config_.maxAge * 3 / 4 ? 4 : (age > config_.maxAge / 2 ? 3 : (age > config_.maxAge / 4 ? 2 : 0));
 
-    if (config_.palette % 4 == 3) {
-        constexpr std::string_view ice[] = { "\x1b[30m", "\x1b[2;34m", "\x1b[0;34m", "\x1b[1;37m", "\x1b[1;97m" };
-        return std::string(ice[band]);
+        if (config_.palette % 4 == 1) {
+            constexpr std::string_view ember[] = { "\x1b[30m", "\x1b[2;31m", "\x1b[0;31m", "\x1b[1;33m", "\x1b[1;97m" };
+            colorCache_[static_cast<std::size_t>(age)] = ember[band];
+        } else if (config_.palette % 4 == 2) {
+            constexpr std::string_view acid[] = { "\x1b[30m", "\x1b[2;32m", "\x1b[0;32m", "\x1b[1;33m", "\x1b[1;97m" };
+            colorCache_[static_cast<std::size_t>(age)] = acid[band];
+        } else if (config_.palette % 4 == 3) {
+            constexpr std::string_view ice[] = { "\x1b[30m", "\x1b[2;34m", "\x1b[0;34m", "\x1b[1;37m", "\x1b[1;97m" };
+            colorCache_[static_cast<std::size_t>(age)] = ice[band];
+        } else if (age > config_.maxAge * 3 / 4) {
+            colorCache_[static_cast<std::size_t>(age)] = "\x1b[1;97m";
+        } else if (age > config_.maxAge / 2) {
+            colorCache_[static_cast<std::size_t>(age)] = "\x1b[1;36m";
+        } else if (age > config_.maxAge / 4) {
+            colorCache_[static_cast<std::size_t>(age)] = "\x1b[2;35m";
+        }
     }
-
-    if (age > config_.maxAge * 3 / 4) {
-        return "\x1b[1;97m";
-    }
-    if (age > config_.maxAge / 2) {
-        return "\x1b[1;36m";
-    }
-    if (age > config_.maxAge / 4) {
-        return "\x1b[2;35m";
-    }
-    return "\x1b[30m";
 }
 
 } // namespace asciiscope
