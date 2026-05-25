@@ -249,8 +249,9 @@ useful when stopping a recording or checking the last frame of a bounded take.
 seconds, and 90 warmup frames. You can still override it with `--fps`,
 `--seconds`, `--frames`, or `--warmup`.
 
-`--tour` cycles bloom, tunnel, particles, and spectral looks in one canvas-only
-capture. Use `--tour-seconds` to choose how long each look stays on screen.
+`--tour` cycles bloom, tunnel, particles, spectral, and circle looks in one
+canvas-only capture. Use `--tour-seconds` to choose how long each look stays on
+screen.
 
 Glyph styles:
 

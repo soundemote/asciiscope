@@ -31,6 +31,7 @@ constexpr double kMinBrightness = 0.25;
 constexpr double kMaxBrightness = 1.5;
 constexpr int kMinBlackFloor = 0;
 constexpr int kMaxBlackFloor = 31;
+constexpr int kTourCueCount = 5;
 
 bool hasArg(int argc, char** argv, std::string_view target) {
     for (int i = 1; i < argc; ++i) {
@@ -220,7 +221,7 @@ void printHelp() {
       << "  --fps N                presentation rate, 1 to 240\n"
       << "  --seed N               repeatable demo seed, decimal or 0x hex\n"
       << "  --reel                 8s canvas capture defaults for social clips\n"
-      << "  --tour                 cycle the strongest looks in one capture take\n"
+      << "  --tour                 cycle all five looks in one capture take\n"
       << "  --tour-seconds N       seconds per tour look, 1 to 30\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral | circle\n"
       << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral | circle-cal\n"
@@ -465,20 +466,22 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
 }
 
 std::string_view tourCueName(int cue) {
-    switch (cue % 4) {
+    switch (cue % kTourCueCount) {
     case 0:
         return "tour bloom";
     case 1:
         return "tour tunnel";
     case 2:
         return "tour particles";
-    default:
+    case 3:
         return "tour spectral";
+    default:
+        return "tour circle";
     }
 }
 
 void applyTourCue(int cue, Controls& controls) {
-    switch (cue % 4) {
+    switch (cue % kTourCueCount) {
     case 0:
         controls.mode = 0;
         controls.speed = 1.08;
@@ -506,7 +509,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.glyphStyle = 2;
         controls.palette = 1;
         break;
-    default:
+    case 3:
         controls.mode = 3;
         controls.speed = 0.88;
         controls.density = 1.3;
@@ -514,6 +517,18 @@ void applyTourCue(int cue, Controls& controls) {
         controls.fade = 4;
         controls.glyphStyle = 3;
         controls.palette = 3;
+        break;
+    default:
+        controls.mode = 4;
+        controls.speed = 1.0;
+        controls.density = 1.0;
+        controls.zoom = 1.0;
+        controls.fade = 1;
+        controls.glyphStyle = 0;
+        controls.palette = 0;
+        controls.circleFrequencyHz = 1.25;
+        controls.brightness = 1.0;
+        controls.blackFloor = 0;
         break;
     }
 
@@ -982,7 +997,7 @@ int main(int argc, char** argv) {
     if (tourMode) {
         width = 128;
         height = 36;
-        frameLimit = fps * tourSeconds * 4;
+        frameLimit = fps * tourSeconds * kTourCueCount;
         applyTourCue(0, controls);
     }
     if (const auto seconds = doubleValue(argc, argv, "--seconds")) {
@@ -1036,7 +1051,7 @@ int main(int argc, char** argv) {
         }
 
         const int cueFrames = std::max(1, fps * tourSeconds);
-        const int cue = (presentedFrames / cueFrames) % 4;
+        const int cue = (presentedFrames / cueFrames) % kTourCueCount;
         if (cue != activeTourCue) {
             applyTourCue(cue, controls);
             activeTourCue = cue;
