@@ -42,6 +42,7 @@ Left drag    pan the visual center without clearing trails
 z Z          keyboard zoom out / in
 f F          slower or faster circle trace frequency, up to 10 Hz
 b B          dim or brighten the trace
+v V          lower or raise the black trail floor
 < >          shorter or longer trails
 g            cycle glyph style
 p            cycle color palette

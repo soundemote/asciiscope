@@ -17,7 +17,7 @@ class ConsoleRenderer {
         bool chrome{ true };
         std::string glyphRamp{ " .:-=+*#%@" };
         int palette{ 0 };
-        int blackFloor{ 3 };
+        int blackFloor{ 6 };
     };
 
     explicit ConsoleRenderer(Config config = {});
