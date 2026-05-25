@@ -26,7 +26,7 @@ namespace {
 constexpr double kMinZoom = 0.25;
 constexpr double kMaxZoom = 16.0;
 constexpr double kMinCircleFrequency = 0.005;
-constexpr double kMaxCircleFrequency = 1.0;
+constexpr double kMaxCircleFrequency = 10.0;
 
 bool hasArg(int argc, char** argv, std::string_view target) {
     for (int i = 1; i < argc; ++i) {
@@ -225,7 +225,7 @@ void printHelp() {
       << "  --speed N              visual speed, 0.15 to 4.0\n"
       << "  --density N            signal density, 0.25 to 2.0\n"
       << "  --zoom N               visual zoom, 0.25 to 16.0\n"
-      << "  --circle-hz N          circle trace frequency, 0.005 to 1.0 Hz\n"
+      << "  --circle-hz N          circle trace frequency, 0.005 to 10.0 Hz\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"

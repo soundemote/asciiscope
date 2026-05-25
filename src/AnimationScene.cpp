@@ -17,16 +17,6 @@ void plotView(ConsoleRenderer& renderer, double x, double y, double intensity, c
     renderer.plot((x * settings.zoom) + settings.centerX, (y * settings.zoom) + settings.centerY, intensity);
 }
 
-int gridX(ConsoleRenderer& renderer, double x, const SceneSettings& settings) {
-    const double px = (((x * settings.zoom) + settings.centerX) * 0.5 + 0.5) * static_cast<double>(renderer.width() - 1);
-    return static_cast<int>(std::round(px));
-}
-
-int gridY(ConsoleRenderer& renderer, double y, const SceneSettings& settings) {
-    const double py = (0.5 - (((y * settings.zoom) + settings.centerY) * 0.5)) * static_cast<double>(renderer.height() - 1);
-    return static_cast<int>(std::round(py));
-}
-
 } // namespace
 
 AnimationScene::AnimationScene(ConsoleRenderer& renderer)
@@ -159,33 +149,31 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
 }
 
 void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
-    constexpr std::string_view glyphs{ "@#%*+=:. " };
-    constexpr int tailPoints = 112;
-    const double circleHz = std::clamp(settings.circleFrequencyHz, 0.005, 1.0);
+    constexpr int historyPoints = 160;
+    const double circleHz = std::clamp(settings.circleFrequencyHz, 0.005, 10.0);
     const double headAngle = frame.timeSeconds * circleHz * soemdsp::constant::kTAU;
     const double radius = std::clamp(0.58 + source.stats.rms * 0.08, 0.34, 0.72);
-    const double tailRadians = soemdsp::constant::kTAU * 0.62;
+    const double historySeconds = std::clamp(4.0 / std::sqrt(std::max(circleHz, 0.005)), 0.32, 8.0);
+    const double previousAngle = (frame.timeSeconds - frame.deltaTime) * circleHz * soemdsp::constant::kTAU;
+    const int tracePoints = std::clamp(static_cast<int>(std::ceil(std::abs(headAngle - previousAngle) * 44.0)), 6, 160);
 
-    for (int i = tailPoints - 1; i >= 0; --i) {
-        const double trail = static_cast<double>(i) / static_cast<double>(tailPoints - 1);
-        const double angle = headAngle - trail * tailRadians;
+    for (int i = historyPoints - 1; i >= 0; --i) {
+        const double trail = static_cast<double>(i) / static_cast<double>(historyPoints - 1);
+        const double ageSeconds = trail * historySeconds;
+        const double angle = headAngle - ageSeconds * circleHz * soemdsp::constant::kTAU;
         const double x = std::cos(angle) * radius;
         const double y = std::sin(angle) * radius;
-        const double intensity = 1.0 - trail * 0.78;
+        const double intensity = std::clamp(1.0 - trail * 0.96, 0.03, 1.0);
         plotView(renderer_, x, y, intensity, settings);
-
-        if (i % 4 == 0) {
-            const auto glyphIndex = static_cast<std::size_t>(std::clamp<int>(
-              static_cast<int>(trail * static_cast<double>(glyphs.size() - 1)), 0, static_cast<int>(glyphs.size() - 1)));
-            const char glyph[2]{ glyphs[glyphIndex], '\0' };
-            const auto age = static_cast<std::uint8_t>(std::clamp<int>(13 - static_cast<int>(trail * 10.0), 3, 13));
-            renderer_.writeText(gridX(renderer_, x, settings), gridY(renderer_, y, settings), glyph, age);
-        }
     }
 
-    const double headX = std::cos(headAngle) * radius;
-    const double headY = std::sin(headAngle) * radius;
-    renderer_.writeText(gridX(renderer_, headX, settings), gridY(renderer_, headY, settings), "@", 13);
+    for (int i = 0; i < tracePoints; ++i) {
+        const double mix = static_cast<double>(i) / static_cast<double>(std::max(1, tracePoints - 1));
+        const double angle = previousAngle + (headAngle - previousAngle) * mix;
+        const double x = std::cos(angle) * radius;
+        const double y = std::sin(angle) * radius;
+        plotView(renderer_, x, y, 1.0, settings);
+    }
 }
 
 } // namespace asciiscope
