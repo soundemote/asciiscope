@@ -27,6 +27,8 @@ constexpr double kMinZoom = 0.25;
 constexpr double kMaxZoom = 16.0;
 constexpr double kMinCircleFrequency = 0.005;
 constexpr double kMaxCircleFrequency = 10.0;
+constexpr double kMinBrightness = 0.25;
+constexpr double kMaxBrightness = 1.5;
 
 bool hasArg(int argc, char** argv, std::string_view target) {
     for (int i = 1; i < argc; ++i) {
@@ -226,6 +228,7 @@ void printHelp() {
       << "  --density N            signal density, 0.25 to 2.0\n"
       << "  --zoom N               visual zoom, 0.25 to 16.0\n"
       << "  --circle-hz N          circle trace frequency, 0.005 to 10.0 Hz\n"
+      << "  --brightness N         trace brightness, 0.25 to 1.5\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"
@@ -248,6 +251,7 @@ void printHelp() {
       << "  Mouse wheel or z Z    zoom without clearing trails\n"
       << "  Left-drag             pan the visual center\n"
       << "  f F                   slower or faster circle trace\n"
+      << "  b B                   dim or brighten trace\n"
       << "  < >                   trail length\n"
       << "  g / p / c             glyphs / palette / color\n"
       << "  o                     recenter view\n"
@@ -281,6 +285,7 @@ struct Controls {
     double centerX{ 0.0 };
     double centerY{ 0.0 };
     double circleFrequencyHz{ 1.25 };
+    double brightness{ 1.0 };
     int fade{ 2 };
     int glyphStyle{ 0 };
     int palette{ 0 };
@@ -308,18 +313,19 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
     renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
     renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  5 circle  0 auto", 11);
     renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel/z/Z zoom", 11);
-    renderer.writeText(x, y++, "left-click drag pans center  f/F circle frequency", 11);
+    renderer.writeText(x, y++, "left-click drag pans center  f/F circle frequency  b/B brightness", 11);
     renderer.writeText(x, y++, "[/] or left/right density  </> trails  g glyphs  p palette", 11);
     renderer.writeText(x, y++, "c color  o center view  r/x clear trails", 11);
 
     std::snprintf(line,
                   sizeof(line),
-                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  circle %.3fhz",
+                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  circle %.3fhz  bright %.2fx",
                   mode,
                   controls.speed,
                   controls.density,
                   controls.zoom,
-                  controls.circleFrequencyHz);
+                  controls.circleFrequencyHz,
+                  controls.brightness);
     renderer.writeText(x, y++, line, 13);
 
     std::snprintf(line,
@@ -469,6 +475,11 @@ void handleKey(int key, Controls& controls) {
         controls.lastAdjustment = "circle frequency";
         return;
     }
+    if (key == 'B') {
+        controls.brightness = std::min(kMaxBrightness, controls.brightness + 0.05);
+        controls.lastAdjustment = "brightness";
+        return;
+    }
 
     const auto lower = static_cast<char>(std::tolower(key));
 
@@ -544,6 +555,10 @@ void handleKey(int key, Controls& controls) {
     case 'f':
         controls.circleFrequencyHz = std::max(kMinCircleFrequency, controls.circleFrequencyHz / 1.12);
         controls.lastAdjustment = "circle frequency";
+        break;
+    case 'b':
+        controls.brightness = std::max(kMinBrightness, controls.brightness - 0.05);
+        controls.lastAdjustment = "brightness";
         break;
     case 'g':
         controls.glyphStyle = (controls.glyphStyle + 1) % 4;
@@ -725,7 +740,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz bright %.2fx trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -734,6 +749,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           controls.centerX,
           controls.centerY,
           controls.circleFrequencyHz,
+          controls.brightness,
           controls.fade,
           glyphStyleName(controls.glyphStyle).data(),
           paletteName(controls.palette).data(),
@@ -749,7 +765,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | bright %.2fx | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -758,6 +774,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       controls.centerX,
       controls.centerY,
       controls.circleFrequencyHz,
+      controls.brightness,
       controls.fade,
       glyphStyleName(controls.glyphStyle).data(),
       paletteName(controls.palette).data(),
@@ -813,6 +830,7 @@ void printLaunchDescription(const Controls& controls,
       << "  zoom       " << controls.zoom << "\n"
       << "  center     " << controls.centerX << ", " << controls.centerY << "\n"
       << "  circle hz  " << controls.circleFrequencyHz << "\n"
+      << "  brightness " << controls.brightness << "\n"
       << "  trail      " << controls.fade << "\n"
       << "  glyphs     " << glyphStyleName(controls.glyphStyle) << "\n"
       << "  palette    " << paletteName(controls.palette) << "\n"
@@ -861,6 +879,7 @@ int main(int argc, char** argv) {
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
     controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, kMinZoom, kMaxZoom);
     controls.circleFrequencyHz = boundedDoubleOption(argc, argv, "--circle-hz", controls.circleFrequencyHz, kMinCircleFrequency, kMaxCircleFrequency);
+    controls.brightness = boundedDoubleOption(argc, argv, "--brightness", controls.brightness, kMinBrightness, kMaxBrightness);
     controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
     if (const auto glyphArg = argValue(argc, argv, "--glyphs")) {
         if (const auto glyphStyle = glyphStyleFromName(*glyphArg)) {
@@ -962,6 +981,7 @@ int main(int argc, char** argv) {
             .centerX = controls.centerX,
             .centerY = controls.centerY,
             .circleFrequencyHz = controls.circleFrequencyHz,
+            .brightness = controls.brightness,
             .fade = controls.fade
         };
         scene.draw(signalFrame, settings);

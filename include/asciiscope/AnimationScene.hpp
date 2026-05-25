@@ -14,6 +14,7 @@ struct SceneSettings {
     double centerX{ 0.0 };
     double centerY{ 0.0 };
     double circleFrequencyHz{ 1.25 };
+    double brightness{ 1.0 };
     int fade{ 2 };
 };
 

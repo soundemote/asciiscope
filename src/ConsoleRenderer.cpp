@@ -186,7 +186,7 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
                 } else {
                     out << text;
                 }
-            } else if (age == 0) {
+            } else if (age <= config_.blackFloor) {
                 out << ' ';
             } else if (config_.color) {
                 out << colorFor(age) << glyphFor(age) << "\x1b[0m";
@@ -267,7 +267,7 @@ void ConsoleRenderer::present(std::string_view title, std::string_view mode, std
             const auto text = textCells_[cellIndex];
             const auto age = text == ' ' ? cells_[cellIndex] : textAges_[cellIndex];
             const auto outIndex = static_cast<std::size_t>(outY * outWidth + x + outX);
-            buffer[outIndex].Char.AsciiChar = text != ' ' ? text : (age == 0 ? ' ' : glyphFor(age));
+            buffer[outIndex].Char.AsciiChar = text != ' ' ? text : (age <= config_.blackFloor ? ' ' : glyphFor(age));
             buffer[outIndex].Attributes = attributeForAge(age, config_.maxAge, config_.color, config_.palette);
         }
     }

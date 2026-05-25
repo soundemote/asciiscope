@@ -17,6 +17,7 @@ class ConsoleRenderer {
         bool chrome{ true };
         std::string glyphRamp{ " .:-=+*#%@" };
         int palette{ 0 };
+        int blackFloor{ 3 };
     };
 
     explicit ConsoleRenderer(Config config = {});
@@ -34,6 +35,7 @@ class ConsoleRenderer {
     void setChrome(bool enabled) noexcept { config_.chrome = enabled; }
     void setGlyphRamp(std::string_view glyphRamp);
     void setPalette(int palette) noexcept { config_.palette = palette; }
+    void setBlackFloor(int blackFloor) noexcept { config_.blackFloor = blackFloor; }
 
     [[nodiscard]] int width() const noexcept { return config_.width; }
     [[nodiscard]] int height() const noexcept { return config_.height; }

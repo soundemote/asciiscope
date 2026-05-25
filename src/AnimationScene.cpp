@@ -14,7 +14,7 @@ const SignalSample& sampleAt(const SignalSource& source, std::size_t index) {
 }
 
 void plotView(ConsoleRenderer& renderer, double x, double y, double intensity, const SceneSettings& settings) {
-    renderer.plot((x * settings.zoom) + settings.centerX, (y * settings.zoom) + settings.centerY, intensity);
+    renderer.plot((x * settings.zoom) + settings.centerX, (y * settings.zoom) + settings.centerY, intensity * settings.brightness);
 }
 
 } // namespace
