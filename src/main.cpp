@@ -198,6 +198,7 @@ void printHelp() {
       << "asciiscope - terminal-native signal visuals\n\n"
       << "Options:\n"
       << "  --help                 show this help\n"
+      << "  --list-presets         show preset identities and capture recipes\n"
       << "  --once                 run a short 90-frame smoke demo\n"
       << "  --frames N             run exactly N frames\n"
       << "  --seconds N            run for N seconds at the selected fps\n"
@@ -223,6 +224,19 @@ void printHelp() {
       << "  asciiscope --preset neon-tunnel\n"
       << "  asciiscope --preset particle-storm --reel\n"
       << "  asciiscope --mode spectral --seconds 8 --fps 30\n";
+}
+
+void printPresets() {
+    std::cout
+      << "asciiscope presets\n\n"
+      << "  bloom-reel      classic glyphs | neon palette | attractor bloom\n"
+      << "  neon-tunnel     dense glyphs   | neon palette | wide phasor tunnel\n"
+      << "  particle-storm  block glyphs   | ember palette | high density particles\n"
+      << "  ghost-spectral  wire glyphs    | ice palette | wide spectral ribbon\n\n"
+      << "capture recipes\n\n"
+      << "  asciiscope --preset particle-storm --reel\n"
+      << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
+      << "  asciiscope --preset neon-tunnel --canvas-only --warmup 90 --seconds 8 --fps 30\n";
 }
 
 struct Controls {
@@ -556,6 +570,10 @@ int main(int argc, char** argv) {
 
     if (hasArg(argc, argv, "--help") || hasArg(argc, argv, "-h")) {
         printHelp();
+        return 0;
+    }
+    if (hasArg(argc, argv, "--list-presets")) {
+        printPresets();
         return 0;
     }
 
