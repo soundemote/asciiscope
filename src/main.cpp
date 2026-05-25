@@ -240,8 +240,10 @@ void printHelp() {
       << "  + - or Up Down        speed\n"
       << "  [ ] or Left Right     density\n"
       << "  Mouse wheel or z Z    zoom without clearing trails\n"
+      << "  Left-drag             pan the visual center\n"
       << "  < >                   trail length\n"
       << "  g / p / c             glyphs / palette / color\n"
+      << "  o                     recenter view\n"
       << "  r or x                clear trails\n"
       << "  q or Esc              quit\n";
 }
@@ -269,10 +271,15 @@ struct Controls {
     double speed{ 1.0 };
     double density{ 1.0 };
     double zoom{ 1.0 };
+    double centerX{ 0.0 };
+    double centerY{ 0.0 };
     int fade{ 2 };
     int glyphStyle{ 0 };
     int palette{ 0 };
     bool clearRequested{ false };
+    bool mouseDragging{ false };
+    int mouseX{};
+    int mouseY{};
     std::string lastAdjustment{ "ready" };
     std::string inputStatus{ "input pending" };
 };
@@ -292,23 +299,26 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
 
     renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
     renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  0 auto", 11);
-    renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel or z/Z zoom", 11);
+    renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel/z/Z zoom", 11);
+    renderer.writeText(x, y++, "left-click drag pans center without clearing trails", 11);
     renderer.writeText(x, y++, "[/] or left/right density  </> trails  g glyphs  p palette", 11);
-    renderer.writeText(x, y++, "c color  r/x clear trails", 11);
+    renderer.writeText(x, y++, "c color  o center view  r/x clear trails", 11);
 
     std::snprintf(line,
                   sizeof(line),
-                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  trail %d",
+                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  center %.2f %.2f",
                   mode,
                   controls.speed,
                   controls.density,
                   controls.zoom,
-                  controls.fade);
+                  controls.centerX,
+                  controls.centerY);
     renderer.writeText(x, y++, line, 13);
 
     std::snprintf(line,
                   sizeof(line),
-                  "glyphs %-7.*s palette %-5.*s color %s  last %s",
+                  "trail %d  glyphs %-7.*s palette %-5.*s color %s  last %s",
+                  controls.fade,
                   static_cast<int>(glyphStyleName(controls.glyphStyle).size()),
                   glyphStyleName(controls.glyphStyle).data(),
                   static_cast<int>(paletteName(controls.palette).size()),
@@ -521,6 +531,11 @@ void handleKey(int key, Controls& controls) {
         controls.palette = (controls.palette + 1) % 4;
         controls.lastAdjustment = "palette";
         break;
+    case 'o':
+        controls.centerX = 0.0;
+        controls.centerY = 0.0;
+        controls.lastAdjustment = "center reset";
+        break;
     case 'x':
     case 'r':
         controls.clearRequested = true;
@@ -539,6 +554,16 @@ void nudgeZoom(Controls& controls, int direction) {
     const double ratio = direction > 0 ? 1.18 : 1.0 / 1.18;
     controls.zoom = std::clamp(controls.zoom * ratio, kMinZoom, kMaxZoom);
     controls.lastAdjustment = "mousewheel zoom";
+}
+
+void nudgeCenter(Controls& controls, int dx, int dy, int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return;
+    }
+
+    controls.centerX = std::clamp(controls.centerX + (static_cast<double>(dx) * 2.0 / static_cast<double>(width)), -4.0, 4.0);
+    controls.centerY = std::clamp(controls.centerY - (static_cast<double>(dy) * 2.0 / static_cast<double>(height)), -4.0, 4.0);
+    controls.lastAdjustment = "mouse drag center";
 }
 
 #ifdef _WIN32
@@ -574,7 +599,9 @@ void restoreConsoleInput(const ConsoleInputState& state) {
 }
 #endif
 
-void pollControls(Controls& controls
+void pollControls(Controls& controls,
+                  int canvasWidth,
+                  int canvasHeight
 #ifdef _WIN32
                   ,
                   const ConsoleInputState& inputState
@@ -616,6 +643,20 @@ void pollControls(Controls& controls
             } else if (record.EventType == MOUSE_EVENT && record.Event.MouseEvent.dwEventFlags == MOUSE_WHEELED) {
                 const auto wheel = static_cast<short>(HIWORD(record.Event.MouseEvent.dwButtonState));
                 nudgeZoom(controls, wheel > 0 ? 1 : -1);
+            } else if (record.EventType == MOUSE_EVENT) {
+                const bool leftDown = (record.Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0;
+                const int mouseX = static_cast<int>(record.Event.MouseEvent.dwMousePosition.X);
+                const int mouseY = static_cast<int>(record.Event.MouseEvent.dwMousePosition.Y);
+
+                if (leftDown && controls.mouseDragging) {
+                    nudgeCenter(controls, mouseX - controls.mouseX, mouseY - controls.mouseY, canvasWidth, canvasHeight);
+                } else if (leftDown) {
+                    controls.lastAdjustment = "mouse drag start";
+                }
+
+                controls.mouseDragging = leftDown;
+                controls.mouseX = mouseX;
+                controls.mouseY = mouseY;
             }
         }
 
@@ -651,23 +692,25 @@ void pollControls(Controls& controls
 }
 
 std::string footerFor(const Controls& controls, const std::optional<asciiscope::SignalStats>& stats) {
-    char footer[280]{};
+    char footer[360]{};
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : "spectral")));
 
     if (controls.help) {
-        return "control help visible | h/? hide controls | wheel zoom keeps trails | q quit";
+        return "control help visible | h/? hide controls | wheel zoom | left-drag center | q quit";
     }
 
     if (stats.has_value()) {
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
           controls.density,
           controls.zoom,
+          controls.centerX,
+          controls.centerY,
           controls.fade,
           glyphStyleName(controls.glyphStyle).data(),
           paletteName(controls.palette).data(),
@@ -683,12 +726,14 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
       controls.density,
       controls.zoom,
+      controls.centerX,
+      controls.centerY,
       controls.fade,
       glyphStyleName(controls.glyphStyle).data(),
       paletteName(controls.palette).data(),
@@ -740,6 +785,7 @@ void printLaunchDescription(const Controls& controls,
       << "  speed      " << controls.speed << "\n"
       << "  density    " << controls.density << "\n"
       << "  zoom       " << controls.zoom << "\n"
+      << "  center     " << controls.centerX << ", " << controls.centerY << "\n"
       << "  trail      " << controls.fade << "\n"
       << "  glyphs     " << glyphStyleName(controls.glyphStyle) << "\n"
       << "  palette    " << paletteName(controls.palette) << "\n"
@@ -881,7 +927,14 @@ int main(int argc, char** argv) {
         if (const auto* source = signalFrame.findSource("main")) {
             latestStats = source->stats;
         }
-        asciiscope::SceneSettings settings{ .mode = controls.mode, .density = controls.density, .zoom = controls.zoom, .fade = controls.fade };
+        asciiscope::SceneSettings settings{
+            .mode = controls.mode,
+            .density = controls.density,
+            .zoom = controls.zoom,
+            .centerX = controls.centerX,
+            .centerY = controls.centerY,
+            .fade = controls.fade
+        };
         scene.draw(signalFrame, settings);
         visualFrame += controls.speed;
         return frame;
@@ -897,7 +950,9 @@ int main(int argc, char** argv) {
     }
 
     while (controls.running && (frameLimit == 0 || presentedFrames < frameLimit)) {
-        pollControls(controls
+        pollControls(controls,
+                     renderer.width(),
+                     renderer.height()
 #ifdef _WIN32
                      ,
                      inputState

@@ -38,11 +38,13 @@ Up Down      speed up or slow down
 [ ]          reduce or increase signal density
 Left Right   reduce or increase signal density
 Mouse wheel  deep zoom without clearing current trails
+Left drag    pan the visual center without clearing trails
 z Z          keyboard zoom out / in
 < >          shorter or longer trails
 g            cycle glyph style
 p            cycle color palette
 c            toggle color
+o            recenter view
 r or x       clear trails
 h or ?       show control help
 q or Esc     quit

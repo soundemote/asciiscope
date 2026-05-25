@@ -11,6 +11,8 @@ struct SceneSettings {
     int mode{ -1 };
     double density{ 1.0 };
     double zoom{ 1.0 };
+    double centerX{ 0.0 };
+    double centerY{ 0.0 };
     int fade{ 2 };
 };
 

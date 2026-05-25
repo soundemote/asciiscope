@@ -13,6 +13,10 @@ const SignalSample& sampleAt(const SignalSource& source, std::size_t index) {
     return source.samples[index % source.samples.size()];
 }
 
+void plotView(ConsoleRenderer& renderer, double x, double y, double intensity, const SceneSettings& settings) {
+    renderer.plot((x * settings.zoom) + settings.centerX, (y * settings.zoom) + settings.centerY, intensity);
+}
+
 } // namespace
 
 AnimationScene::AnimationScene(ConsoleRenderer& renderer)
@@ -75,7 +79,7 @@ void AnimationScene::drawAttractorBloom(const SignalFrame& frame, const SignalSo
         const auto& s = sampleAt(source, static_cast<std::size_t>(i));
         const double x = (s.x * cs + s.z * sn) * 0.28;
         const double y = (s.y + s.z * 0.11 * s.lfo) * 0.22;
-        renderer_.plot(x * settings.zoom, y * settings.zoom, 0.36 + s.pulse * 0.95);
+        plotView(renderer_, x, y, 0.36 + s.pulse * 0.95, settings);
     }
 }
 
@@ -95,7 +99,7 @@ void AnimationScene::drawWaveTunnel(const SignalFrame& frame, const SignalSource
             const double squeeze = 1.0 / (1.0 + depth * 0.8);
             const double x = std::cos(angle) * radius * squeeze;
             const double y = std::sin(angle) * radius * 0.48 + wave * 0.08 + s.lfo * 0.04;
-            renderer_.plot(x * settings.zoom, y * settings.zoom, 0.20 + (1.0 - depth) * 0.9 + s.pulse * 0.6);
+            plotView(renderer_, x, y, 0.20 + (1.0 - depth) * 0.9 + s.pulse * 0.6, settings);
         }
     }
 }
@@ -112,7 +116,7 @@ void AnimationScene::drawParticleField(const SignalFrame& frame, const SignalSou
         const double shear = std::sin((lane * 3.0 + drift) * soemdsp::constant::kTAU) * 0.26;
         const double x = std::cos(angle) * radial + shear * 0.35;
         const double y = std::sin(angle * 0.73 + s.lfo) * radial * 0.55 + s.noise * 0.035;
-        renderer_.plot(x * settings.zoom, y * settings.zoom, 0.24 + s.pulse + std::abs(s.noise) * 0.35);
+        plotView(renderer_, x, y, 0.24 + s.pulse + std::abs(s.noise) * 0.35, settings);
     }
 }
 
@@ -134,7 +138,7 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
             const double rise = static_cast<double>(y) / std::max(1.0, height);
             const double px = (static_cast<double>(x) / width) * 2.0 - 1.0;
             const double py = -0.88 + rise * 1.58 + motion * (1.0 - rise);
-            renderer_.plot(px, py, 0.20 + energy * 0.9 - rise * 0.18);
+            plotView(renderer_, px / settings.zoom, py / settings.zoom, 0.20 + energy * 0.9 - rise * 0.18, settings);
         }
     }
 }
