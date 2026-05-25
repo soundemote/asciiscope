@@ -151,18 +151,20 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
 void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
     (void)source;
 
+    constexpr double kTerminalCellAspect = 2.0;
     const double circleHz = std::clamp(settings.circleFrequencyHz, 0.005, 10.0);
     const double headAngle = frame.timeSeconds * circleHz * soemdsp::constant::kTAU;
     const double previousAngle = (frame.timeSeconds - frame.deltaTime) * circleHz * soemdsp::constant::kTAU;
-    const double radius = 0.64;
-    const double pixelsPerTurn = static_cast<double>(std::max(renderer_.width(), renderer_.height())) * radius * soemdsp::constant::kTAU * 0.5;
+    const double yRadius = 0.64;
+    const double xRadius = yRadius * static_cast<double>(renderer_.height()) / static_cast<double>(renderer_.width()) * kTerminalCellAspect;
+    const double pixelsPerTurn = static_cast<double>(renderer_.height()) * yRadius * soemdsp::constant::kTAU * 0.5;
     const int tracePoints = std::clamp(static_cast<int>(std::ceil(std::abs(headAngle - previousAngle) * pixelsPerTurn / soemdsp::constant::kTAU)) + 2, 4, 240);
 
     for (int i = 0; i < tracePoints; ++i) {
         const double mix = static_cast<double>(i) / static_cast<double>(std::max(1, tracePoints - 1));
         const double angle = previousAngle + (headAngle - previousAngle) * mix;
-        const double x = std::cos(angle) * radius;
-        const double y = std::sin(angle) * radius;
+        const double x = std::cos(angle) * xRadius;
+        const double y = std::sin(angle) * yRadius;
         plotView(renderer_, x, y, 1.0, settings);
     }
 }
