@@ -311,11 +311,27 @@ std::string ConsoleRenderer::render(std::string_view title, std::string_view mod
                 out << ' ';
                 ++x;
             } else if (config_.color) {
-                out << colorFor(age) << glyphFor(age) << "\x1b[0m";
-                ++x;
+                out << colorFor(age);
+                const char glyph = glyphFor(age);
+                while (x < config_.width) {
+                    const auto runIndex = static_cast<std::size_t>(index(x, y));
+                    if (textCells_[runIndex] != ' ' || cells_[runIndex] != age || cells_[runIndex] <= config_.blackFloor) {
+                        break;
+                    }
+                    out << glyph;
+                    ++x;
+                }
+                out << "\x1b[0m";
             } else {
-                out << glyphFor(age);
-                ++x;
+                const char glyph = glyphFor(age);
+                while (x < config_.width) {
+                    const auto runIndex = static_cast<std::size_t>(index(x, y));
+                    if (textCells_[runIndex] != ' ' || cells_[runIndex] != age || cells_[runIndex] <= config_.blackFloor) {
+                        break;
+                    }
+                    out << glyph;
+                    ++x;
+                }
             }
         }
         if (config_.chrome) {
