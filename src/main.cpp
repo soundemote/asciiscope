@@ -264,6 +264,7 @@ void printHelp() {
       << "  Mouse wheel or z Z    zoom without clearing trails\n"
       << "  Left-drag             pan the visual center\n"
       << "  f F                   slower or faster circle trace\n"
+      << "  e E                   lower or raise circle cell aspect\n"
       << "  b B                   dim or brighten trace\n"
       << "  v V                   lower or raise black trail floor\n"
       << "  < >                   trail length\n"
@@ -367,7 +368,7 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
     renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
     renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  5 circle  0 auto", 11);
     renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel/z/Z zoom", 11);
-    renderer.writeText(x, y++, "left-click drag pans center  f/F circle frequency  --cell-aspect tunes roundness", 11);
+    renderer.writeText(x, y++, "left-click drag pans center  f/F frequency  e/E cell aspect", 11);
     renderer.writeText(x, y++, "v/V black floor  [/] or left/right density  </> trails", 11);
     renderer.writeText(x, y++, "g glyphs  p palette  c color  o center view  r/x clear trails", 11);
 
@@ -568,6 +569,11 @@ void handleKey(int key, Controls& controls) {
         controls.lastAdjustment = "circle frequency";
         return;
     }
+    if (key == 'E') {
+        controls.cellAspect = std::min(kMaxCellAspect, controls.cellAspect + 0.05);
+        controls.lastAdjustment = "cell aspect";
+        return;
+    }
     if (key == 'B') {
         controls.brightness = std::min(kMaxBrightness, controls.brightness + 0.05);
         controls.lastAdjustment = "brightness";
@@ -653,6 +659,10 @@ void handleKey(int key, Controls& controls) {
     case 'f':
         controls.circleFrequencyHz = std::max(kMinCircleFrequency, controls.circleFrequencyHz / 1.12);
         controls.lastAdjustment = "circle frequency";
+        break;
+    case 'e':
+        controls.cellAspect = std::max(kMinCellAspect, controls.cellAspect - 0.05);
+        controls.lastAdjustment = "cell aspect";
         break;
     case 'b':
         controls.brightness = std::max(kMinBrightness, controls.brightness - 0.05);

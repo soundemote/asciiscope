@@ -41,7 +41,7 @@ Mouse wheel  deep zoom without clearing current trails
 Left drag    pan the visual center without clearing trails
 z Z          keyboard zoom out / in
 f F          slower or faster circle trace frequency, up to 10 Hz
---cell-aspect tune terminal cell ratio for round circle calibration
+e E          lower or raise terminal cell ratio for round circle calibration
 b B          dim or brighten the trace
 v V          lower or raise the black trail floor
 < >          shorter or longer trails
@@ -59,6 +59,8 @@ By default Asciiscope uses ANSI truecolor for smooth trail fades. Use
 Use `--color-ramp` to print a static palette fade diagnostic and exit.
 Use `--no-help` to start with the in-canvas control panel hidden while keeping
 the title and footer visible.
+Use `--cell-aspect` or live `e`/`E` controls to tune roundness for your current
+font, terminal size, and capture crop.
 
 ## what is this?
 
