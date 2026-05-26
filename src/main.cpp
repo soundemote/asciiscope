@@ -243,6 +243,7 @@ void printHelp() {
       << "  --palette NAME         neon | ember | acid | ice\n"
       << "  --title TEXT           title shown in the header\n"
       << "  --canvas-only          hide header, border, and footer\n"
+      << "  --clean                framed capture: hide in-canvas help and hint\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-help              start with the in-canvas control panel hidden\n"
       << "  --no-hint              hide the compact in-canvas h/? control hint\n"
@@ -986,11 +987,12 @@ int main(int argc, char** argv) {
     std::uint32_t seed = 0xA5C115C0;
     const bool reelMode = hasArg(argc, argv, "--reel");
     const bool tourMode = hasArg(argc, argv, "--tour");
+    const bool cleanMode = hasArg(argc, argv, "--clean");
     bool showHud = !hasArg(argc, argv, "--no-hud");
     bool showChrome = !hasArg(argc, argv, "--canvas-only") && !reelMode && !tourMode;
-    bool showHint = !hasArg(argc, argv, "--no-hint");
+    bool showHint = !cleanMode && !hasArg(argc, argv, "--no-hint");
     std::string title = "ASCIISCOPE / SOEMDSP";
-    controls.help = !hasArg(argc, argv, "--no-help");
+    controls.help = !cleanMode && !hasArg(argc, argv, "--no-help");
 
     if (const auto titleArg = argValue(argc, argv, "--title")) {
         title = std::string(*titleArg);
