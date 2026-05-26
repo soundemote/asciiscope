@@ -230,6 +230,8 @@ void printHelp() {
       << "  --speed N              visual speed, 0.15 to 4.0\n"
       << "  --density N            signal density, 0.25 to 2.0\n"
       << "  --zoom N               visual zoom, 0.25 to 16.0\n"
+      << "  --center-x N           horizontal visual center offset, -4.0 to 4.0\n"
+      << "  --center-y N           vertical visual center offset, -4.0 to 4.0\n"
       << "  --circle-hz N          circle trace frequency, 0.005 to 10.0 Hz\n"
       << "  --brightness N         trace brightness, 0.25 to 1.5\n"
       << "  --black-floor N        ages at or below this draw as empty cells, 0 to 31\n"
@@ -963,6 +965,8 @@ int main(int argc, char** argv) {
     controls.speed = boundedDoubleOption(argc, argv, "--speed", controls.speed, 0.15, 4.0);
     controls.density = boundedDoubleOption(argc, argv, "--density", controls.density, 0.25, 2.0);
     controls.zoom = boundedDoubleOption(argc, argv, "--zoom", controls.zoom, kMinZoom, kMaxZoom);
+    controls.centerX = boundedDoubleOption(argc, argv, "--center-x", controls.centerX, -4.0, 4.0);
+    controls.centerY = boundedDoubleOption(argc, argv, "--center-y", controls.centerY, -4.0, 4.0);
     controls.circleFrequencyHz = boundedDoubleOption(argc, argv, "--circle-hz", controls.circleFrequencyHz, kMinCircleFrequency, kMaxCircleFrequency);
     controls.brightness = boundedDoubleOption(argc, argv, "--brightness", controls.brightness, kMinBrightness, kMaxBrightness);
     controls.blackFloor = boundedIntOption(argc, argv, "--black-floor", controls.blackFloor, kMinBlackFloor, kMaxBlackFloor);

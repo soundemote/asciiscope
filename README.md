@@ -211,6 +211,7 @@ Options:
 .\build\Release\asciiscope.exe --once
 .\build\Release\asciiscope.exe --mode circle
 .\build\Release\asciiscope.exe --mode circle --circle-hz 0.025
+.\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
@@ -229,9 +230,9 @@ Options:
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
 ```
 
-The footer shows the current mode, speed, density, zoom, trail amount, signal
-RMS/peak/min/max, glyph style, input backend, pause state, and last adjusted
-control.
+The footer shows the current mode, speed, density, zoom, center offset, trail
+amount, signal RMS/peak/min/max, glyph style, input backend, pause state, and
+last adjusted control.
 
 `--seed` accepts decimal or `0x` hex values for repeatable demo takes.
 
