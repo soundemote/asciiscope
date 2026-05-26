@@ -45,6 +45,7 @@ e E          lower or raise terminal cell ratio for round circle calibration
 b B          dim or brighten the trace
 v V          lower or raise the black trail floor
 < >          shorter or longer trails
+--trail-age  set maximum trail memory for longer phosphor fades
 g            cycle glyph style
 p            cycle color palette
 c            toggle color
@@ -222,6 +223,7 @@ Options:
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
 .\build\Release\asciiscope.exe --mode circle --cell-aspect 1.8 --describe
 .\build\Release\asciiscope.exe --preset circle-slow --clean
+.\build\Release\asciiscope.exe --preset circle-slow --clean --trail-age 96
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
@@ -244,6 +246,10 @@ Options:
 The footer shows the current mode, speed, density, zoom, center offset, trail
 amount, signal RMS/peak/min/max, glyph style, input backend, pause state, and
 last adjusted control.
+
+`--trail` controls how much the framebuffer fades each frame. `--trail-age`
+controls the maximum trail memory/intensity, which is useful for slow circle
+captures that should leave a longer phosphor path.
 
 `--seed` accepts decimal or `0x` hex values for repeatable demo takes.
 

@@ -33,6 +33,8 @@ constexpr double kMinBrightness = 0.25;
 constexpr double kMaxBrightness = 1.5;
 constexpr int kMinBlackFloor = 0;
 constexpr int kMaxBlackFloor = 31;
+constexpr int kMinTrailAge = 8;
+constexpr int kMaxTrailAge = 127;
 constexpr int kTourCueCount = 5;
 
 bool hasArg(int argc, char** argv, std::string_view target) {
@@ -239,6 +241,7 @@ void printHelp() {
       << "  --brightness N         trace brightness, 0.25 to 1.5\n"
       << "  --black-floor N        ages at or below this draw as empty cells, 0 to 31\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
+      << "  --trail-age N          maximum trail memory/intensity, 8 to 127\n"
       << "  --glyphs NAME          classic | dense | blocks | wire\n"
       << "  --palette NAME         neon | ember | acid | ice\n"
       << "  --title TEXT           title shown in the header\n"
@@ -311,6 +314,7 @@ struct Controls {
     double brightness{ 1.0 };
     int blackFloor{ 0 };
     int fade{ 2 };
+    int trailAge{ 31 };
     int glyphStyle{ 0 };
     int palette{ 0 };
     bool clearRequested{ false };
@@ -326,7 +330,7 @@ void printColorRamp(const Controls& controls, int width) {
     asciiscope::ConsoleRenderer renderer({
       .width = rampWidth,
       .height = 9,
-      .maxAge = 31,
+      .maxAge = controls.trailAge,
       .color = controls.color,
       .smoothColor = controls.smoothColor,
       .chrome = false,
@@ -349,7 +353,8 @@ void printColorRamp(const Controls& controls, int width) {
 
     std::cout << "asciiscope color ramp | palette " << paletteName(controls.palette)
               << " | " << (controls.smoothColor ? "truecolor" : "native")
-              << " | black floor " << controls.blackFloor << "\n";
+              << " | black floor " << controls.blackFloor
+              << " | trail age " << controls.trailAge << "\n";
     std::cout << renderer.render({}, {}, {}, 0);
     renderer.restoreTerminal();
 }
@@ -387,12 +392,13 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
 
     std::snprintf(line,
                   sizeof(line),
-                  "center %.2f %.2f  bright %.2fx  black %d  trail %d  glyphs %-7.*s palette %-5.*s color %s  last %s",
+                  "center %.2f %.2f  bright %.2fx  black %d  trail %d/%d  glyphs %-7.*s palette %-5.*s color %s  last %s",
                   controls.centerX,
                   controls.centerY,
                   controls.brightness,
                   controls.blackFloor,
                   controls.fade,
+                  controls.trailAge,
                   static_cast<int>(glyphStyleName(controls.glyphStyle).size()),
                   glyphStyleName(controls.glyphStyle).data(),
                   static_cast<int>(paletteName(controls.palette).size()),
@@ -428,6 +434,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.2;
         controls.zoom = 1.1;
         controls.fade = 2;
+        controls.trailAge = 31;
         controls.glyphStyle = 0;
         controls.palette = 0;
     } else if (preset == "neon-tunnel" || preset == "tunnel") {
@@ -436,6 +443,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.1;
         controls.zoom = 1.15;
         controls.fade = 2;
+        controls.trailAge = 31;
         controls.glyphStyle = 1;
         controls.palette = 0;
         width = 120;
@@ -446,6 +454,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.6;
         controls.zoom = 1.25;
         controls.fade = 3;
+        controls.trailAge = 31;
         controls.glyphStyle = 2;
         controls.palette = 1;
     } else if (preset == "ghost-spectral" || preset == "spectral") {
@@ -454,6 +463,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.25;
         controls.zoom = 1.0;
         controls.fade = 4;
+        controls.trailAge = 31;
         controls.glyphStyle = 3;
         controls.palette = 3;
         width = 128;
@@ -464,6 +474,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.density = 1.0;
         controls.zoom = 1.0;
         controls.fade = 1;
+        controls.trailAge = 31;
         controls.glyphStyle = 0;
         controls.palette = 0;
         controls.circleFrequencyHz = 1.25;
@@ -480,6 +491,7 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.circleFrequencyHz = 0.05;
         controls.brightness = 1.0;
         controls.blackFloor = 0;
+        controls.trailAge = 63;
         frameLimit = 600;
     } else {
         frameLimit = 0;
@@ -513,6 +525,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.density = 1.2;
         controls.zoom = 1.1;
         controls.fade = 2;
+        controls.trailAge = 31;
         controls.glyphStyle = 0;
         controls.palette = 0;
         break;
@@ -522,6 +535,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.density = 1.15;
         controls.zoom = 1.18;
         controls.fade = 2;
+        controls.trailAge = 31;
         controls.glyphStyle = 1;
         controls.palette = 2;
         break;
@@ -531,6 +545,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.density = 1.65;
         controls.zoom = 1.28;
         controls.fade = 3;
+        controls.trailAge = 31;
         controls.glyphStyle = 2;
         controls.palette = 1;
         break;
@@ -540,6 +555,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.density = 1.3;
         controls.zoom = 1.0;
         controls.fade = 4;
+        controls.trailAge = 31;
         controls.glyphStyle = 3;
         controls.palette = 3;
         break;
@@ -549,6 +565,7 @@ void applyTourCue(int cue, Controls& controls) {
         controls.density = 1.0;
         controls.zoom = 1.0;
         controls.fade = 1;
+        controls.trailAge = 63;
         controls.glyphStyle = 0;
         controls.palette = 0;
         controls.circleFrequencyHz = 1.25;
@@ -582,7 +599,7 @@ void handleKey(int key, Controls& controls) {
         return;
     }
     if (key == 'V') {
-        controls.blackFloor = std::min(kMaxBlackFloor, controls.blackFloor + 1);
+        controls.blackFloor = std::min(std::min(kMaxBlackFloor, controls.trailAge - 1), controls.blackFloor + 1);
         controls.lastAdjustment = "black floor";
         return;
     }
@@ -854,7 +871,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz aspect %.2fx bright %.2fx black %d trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz aspect %.2fx bright %.2fx black %d trail %d/%d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -867,6 +884,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           controls.brightness,
           controls.blackFloor,
           controls.fade,
+          controls.trailAge,
           glyphStyleName(controls.glyphStyle).data(),
           paletteName(controls.palette).data(),
           stats->rms,
@@ -881,7 +899,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | aspect %.2fx | bright %.2fx | black %d | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | aspect %.2fx | bright %.2fx | black %d | trail %d/%d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -894,6 +912,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       controls.brightness,
       controls.blackFloor,
       controls.fade,
+      controls.trailAge,
       glyphStyleName(controls.glyphStyle).data(),
       paletteName(controls.palette).data(),
       controls.color ? "on" : "off",
@@ -954,6 +973,7 @@ void printLaunchDescription(const Controls& controls,
       << "  brightness " << controls.brightness << "\n"
       << "  blackfloor " << controls.blackFloor << "\n"
       << "  trail      " << controls.fade << "\n"
+      << "  trail age  " << controls.trailAge << "\n"
       << "  glyphs     " << glyphStyleName(controls.glyphStyle) << "\n"
       << "  palette    " << paletteName(controls.palette) << "\n"
       << "  color mode " << (controls.smoothColor ? "truecolor" : "native") << "\n"
@@ -1014,6 +1034,8 @@ int main(int argc, char** argv) {
     controls.brightness = boundedDoubleOption(argc, argv, "--brightness", controls.brightness, kMinBrightness, kMaxBrightness);
     controls.blackFloor = boundedIntOption(argc, argv, "--black-floor", controls.blackFloor, kMinBlackFloor, kMaxBlackFloor);
     controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
+    controls.trailAge = boundedIntOption(argc, argv, "--trail-age", controls.trailAge, kMinTrailAge, kMaxTrailAge);
+    controls.blackFloor = std::min(controls.blackFloor, controls.trailAge - 1);
     if (const auto glyphArg = argValue(argc, argv, "--glyphs")) {
         if (const auto glyphStyle = glyphStyleFromName(*glyphArg)) {
             controls.glyphStyle = *glyphStyle;
@@ -1079,7 +1101,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = 31, .color = controls.color, .smoothColor = controls.smoothColor, .blackFloor = controls.blackFloor });
+    asciiscope::ConsoleRenderer renderer({ .width = width, .height = height, .maxAge = controls.trailAge, .color = controls.color, .smoothColor = controls.smoothColor, .blackFloor = controls.blackFloor });
     asciiscope::DemoSignalInput signalInput(seed);
     asciiscope::AnimationScene scene(renderer);
 
