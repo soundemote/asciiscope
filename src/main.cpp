@@ -224,7 +224,7 @@ void printHelp() {
       << "  --tour                 cycle all five looks in one capture take\n"
       << "  --tour-seconds N       seconds per tour look, 1 to 30\n"
       << "  --mode NAME            bloom | tunnel | particles | spectral | circle\n"
-      << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral | circle-cal\n"
+      << "  --preset NAME          bloom-reel | neon-tunnel | particle-storm | ghost-spectral | circle-cal | circle-slow\n"
       << "  --width N              canvas width, 40 to 220\n"
       << "  --height N             canvas height, 16 to 80\n"
       << "  --speed N              visual speed, 0.15 to 4.0\n"
@@ -277,9 +277,11 @@ void printPresets() {
       << "  neon-tunnel     dense glyphs   | neon palette | wide phasor tunnel\n"
       << "  particle-storm  block glyphs   | ember palette | high density particles\n"
       << "  ghost-spectral  wire glyphs    | ice palette | wide spectral ribbon\n"
-      << "  circle-cal      classic glyphs | neon palette | circle calibration trace\n\n"
+      << "  circle-cal      classic glyphs | neon palette | circle calibration trace\n"
+      << "  circle-slow     classic glyphs | neon palette | slow circle trace\n\n"
       << "capture recipes\n\n"
       << "  asciiscope --preset particle-storm --reel\n"
+      << "  asciiscope --preset circle-slow --no-help\n"
       << "  asciiscope --preset circle-calibration --reel\n"
       << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
       << "  asciiscope --tour --seconds 16 --hold 2\n"
@@ -459,6 +461,18 @@ bool applyPreset(std::string_view preset, Controls& controls, int& frameLimit, i
         controls.circleFrequencyHz = 1.25;
         controls.brightness = 1.0;
         controls.blackFloor = 0;
+    } else if (preset == "circle-slow" || preset == "slow-circle") {
+        controls.mode = 4;
+        controls.speed = 1.0;
+        controls.density = 1.0;
+        controls.zoom = 1.0;
+        controls.fade = 1;
+        controls.glyphStyle = 0;
+        controls.palette = 0;
+        controls.circleFrequencyHz = 0.05;
+        controls.brightness = 1.0;
+        controls.blackFloor = 0;
+        frameLimit = 600;
     } else {
         frameLimit = 0;
         return false;

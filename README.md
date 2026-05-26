@@ -214,6 +214,7 @@ Options:
 .\build\Release\asciiscope.exe --mode circle
 .\build\Release\asciiscope.exe --mode circle --circle-hz 0.025
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
+.\build\Release\asciiscope.exe --preset circle-slow --no-help
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
@@ -284,6 +285,7 @@ neon-tunnel     dense glyphs, neon palette, wide tunnel
 particle-storm  block glyphs, ember palette, high density particles
 ghost-spectral  wire glyphs, ice palette, wide spectral ribbon
 circle-cal      classic glyphs, neon palette, circle calibration trace
+circle-slow     classic glyphs, neon palette, slow circle trace
 ```
 
 ## future
