@@ -287,7 +287,7 @@ void printPresets() {
       << "  circle-slow     classic glyphs | neon palette | slow circle trace\n\n"
       << "capture recipes\n\n"
       << "  asciiscope --preset particle-storm --reel\n"
-      << "  asciiscope --preset circle-slow --no-help\n"
+      << "  asciiscope --preset circle-slow --clean\n"
       << "  asciiscope --preset circle-calibration --reel\n"
       << "  asciiscope --preset ghost-spectral --reel --seconds 12\n"
       << "  asciiscope --tour --seconds 16 --hold 2\n"

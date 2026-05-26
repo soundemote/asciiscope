@@ -221,8 +221,6 @@ Options:
 .\build\Release\asciiscope.exe --mode circle --circle-hz 0.025
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
 .\build\Release\asciiscope.exe --mode circle --cell-aspect 1.8 --describe
-.\build\Release\asciiscope.exe --preset circle-slow --no-help
-.\build\Release\asciiscope.exe --preset circle-slow --no-help --no-hint
 .\build\Release\asciiscope.exe --preset circle-slow --clean
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
@@ -238,7 +236,7 @@ Options:
 .\build\Release\asciiscope.exe --preset particle-storm --reel
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset circle-calibration
-.\build\Release\asciiscope.exe --preset circle-calibration --no-help
+.\build\Release\asciiscope.exe --preset circle-calibration --clean
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
 ```
