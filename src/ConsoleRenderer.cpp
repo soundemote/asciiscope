@@ -454,6 +454,19 @@ void ConsoleRenderer::setGlyphRamp(std::string_view glyphRamp) {
     }
 }
 
+void ConsoleRenderer::setMaxAge(int maxAge) {
+    const int boundedMaxAge = std::clamp(maxAge, 1, 255);
+    if (config_.maxAge == boundedMaxAge) {
+        return;
+    }
+
+    config_.maxAge = boundedMaxAge;
+    for (auto& cell : cells_) {
+        cell = static_cast<std::uint8_t>(std::min(static_cast<int>(cell), config_.maxAge));
+    }
+    rebuildColorCache();
+}
+
 void ConsoleRenderer::setSmoothColor(bool enabled) {
     if (config_.smoothColor != enabled) {
         config_.smoothColor = enabled;

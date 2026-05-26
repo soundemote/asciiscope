@@ -36,6 +36,7 @@ class ConsoleRenderer {
     void setSmoothColor(bool enabled);
     void setChrome(bool enabled) noexcept { config_.chrome = enabled; }
     void setGlyphRamp(std::string_view glyphRamp);
+    void setMaxAge(int maxAge);
     void setPalette(int palette);
     void setBlackFloor(int blackFloor) noexcept { config_.blackFloor = blackFloor; }
 

@@ -273,6 +273,7 @@ void printHelp() {
       << "  b B                   dim or brighten trace\n"
       << "  v V                   lower or raise black trail floor\n"
       << "  < >                   trail length\n"
+      << "  t T                   lower or raise trail memory\n"
       << "  g / p / c             glyphs / palette / color\n"
       << "  o                     recenter view\n"
       << "  r or x                clear trails\n"
@@ -603,6 +604,11 @@ void handleKey(int key, Controls& controls) {
         controls.lastAdjustment = "black floor";
         return;
     }
+    if (key == 'T') {
+        controls.trailAge = std::min(kMaxTrailAge, controls.trailAge + 8);
+        controls.lastAdjustment = "trail age";
+        return;
+    }
 
     const auto lower = static_cast<char>(std::tolower(key));
 
@@ -690,6 +696,11 @@ void handleKey(int key, Controls& controls) {
     case 'v':
         controls.blackFloor = std::max(kMinBlackFloor, controls.blackFloor - 1);
         controls.lastAdjustment = "black floor";
+        break;
+    case 't':
+        controls.trailAge = std::max(kMinTrailAge, controls.trailAge - 8);
+        controls.blackFloor = std::min(controls.blackFloor, controls.trailAge - 1);
+        controls.lastAdjustment = "trail age";
         break;
     case 'g':
         controls.glyphStyle = (controls.glyphStyle + 1) % 4;
@@ -1156,6 +1167,7 @@ int main(int argc, char** argv) {
     renderer.setChrome(showChrome);
     renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
     renderer.setPalette(controls.palette);
+    renderer.setMaxAge(controls.trailAge);
     renderer.setBlackFloor(controls.blackFloor);
     for (int i = 0; i < warmupFrames; ++i) {
         drawNextFrame();
@@ -1176,6 +1188,7 @@ int main(int argc, char** argv) {
         renderer.setChrome(showChrome);
         renderer.setGlyphRamp(glyphRampForStyle(controls.glyphStyle));
         renderer.setPalette(controls.palette);
+        renderer.setMaxAge(controls.trailAge);
         renderer.setBlackFloor(controls.blackFloor);
 
         if (controls.clearRequested) {

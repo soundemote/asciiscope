@@ -45,7 +45,7 @@ e E          lower or raise terminal cell ratio for round circle calibration
 b B          dim or brighten the trace
 v V          lower or raise the black trail floor
 < >          shorter or longer trails
---trail-age  set maximum trail memory for longer phosphor fades
+t T          lower or raise trail memory for longer phosphor fades
 g            cycle glyph style
 p            cycle color palette
 c            toggle color
