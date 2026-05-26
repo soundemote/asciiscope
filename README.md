@@ -63,6 +63,7 @@ the title and footer visible.
 Use `--no-hint` with `--no-help` to hide the compact in-canvas control hint too.
 Use `--clean` as a shorthand for framed captures with title/footer but no
 in-canvas help or hint.
+Use `--no-footer-help` when the footer should show signal/settings only.
 Use `--cell-aspect` or live `e`/`E` controls to tune roundness for your current
 font, terminal size, and capture crop.
 
@@ -223,6 +224,7 @@ Options:
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
 .\build\Release\asciiscope.exe --mode circle --cell-aspect 1.8 --describe
 .\build\Release\asciiscope.exe --preset circle-slow --clean
+.\build\Release\asciiscope.exe --preset circle-slow --clean --no-footer-help
 .\build\Release\asciiscope.exe --preset circle-slow --clean --trail-age 96
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240

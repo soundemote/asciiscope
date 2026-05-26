@@ -250,6 +250,7 @@ void printHelp() {
       << "  --no-hud               hide the footer readout\n"
       << "  --no-help              start with the in-canvas control panel hidden\n"
       << "  --no-hint              hide the compact in-canvas h/? control hint\n"
+      << "  --no-footer-help       hide h help / q quit hints from the footer\n"
       << "  --no-color             monochrome output\n\n"
       << "  --native-color         use fast 16-color console renderer instead of ANSI truecolor\n"
       << "  --color-ramp           print a static palette fade diagnostic and exit\n"
@@ -320,6 +321,7 @@ struct Controls {
     int palette{ 0 };
     bool clearRequested{ false };
     bool mouseDragging{ false };
+    bool footerHelp{ true };
     int mouseX{};
     int mouseY{};
     std::string lastAdjustment{ "ready" };
@@ -870,19 +872,23 @@ void pollControls(Controls& controls,
 #endif
 }
 
+std::string footerSuffix(const Controls& controls) {
+    return controls.footerHelp ? " | h help | q quit" : "";
+}
+
 std::string footerFor(const Controls& controls, const std::optional<asciiscope::SignalStats>& stats) {
     char footer[360]{};
     const char* mode = controls.mode < 0 ? "auto" : (controls.mode == 0 ? "bloom" : (controls.mode == 1 ? "tunnel" : (controls.mode == 2 ? "particles" : (controls.mode == 3 ? "spectral" : "circle"))));
 
     if (controls.help) {
-        return "control help visible | h/? hide controls | wheel zoom | left-drag center | q quit";
+        return controls.footerHelp ? "control help visible | h/? hide controls | wheel zoom | left-drag center | q quit" : "control help visible";
     }
 
     if (stats.has_value()) {
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz aspect %.2fx bright %.2fx black %d trail %d/%d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz aspect %.2fx bright %.2fx black %d trail %d/%d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s%s",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -903,14 +909,15 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           stats->min,
           stats->max,
           controls.inputStatus.c_str(),
-          controls.lastAdjustment.c_str());
+          controls.lastAdjustment.c_str(),
+          footerSuffix(controls).c_str());
         return footer;
     }
 
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | aspect %.2fx | bright %.2fx | black %d | trail %d/%d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | aspect %.2fx | bright %.2fx | black %d | trail %d/%d | %s glyphs %s palette | color %s | %s | last %s%s",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -928,7 +935,8 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       paletteName(controls.palette).data(),
       controls.color ? "on" : "off",
       controls.inputStatus.c_str(),
-      controls.lastAdjustment.c_str());
+      controls.lastAdjustment.c_str(),
+      footerSuffix(controls).c_str());
     return footer;
 }
 
@@ -992,6 +1000,7 @@ void printLaunchDescription(const Controls& controls,
       << "  hud        " << (showHud && showChrome ? "on" : "off") << "\n"
       << "  help       " << (showHelp && showHud && showChrome ? "on" : "off") << "\n"
       << "  hint       " << (showHint && !showHelp && showHud && showChrome ? "on" : "off") << "\n"
+      << "  footerhelp " << (controls.footerHelp && showHud && showChrome ? "on" : "off") << "\n"
       << "  color      " << (controls.color ? "on" : "off") << "\n"
       << "  seed       0x" << std::hex << std::uppercase << seed << std::dec << std::nouppercase << "\n";
 }
@@ -1024,6 +1033,7 @@ int main(int argc, char** argv) {
     bool showHint = !cleanMode && !hasArg(argc, argv, "--no-hint");
     std::string title = "ASCIISCOPE / SOEMDSP";
     controls.help = !cleanMode && !hasArg(argc, argv, "--no-help");
+    controls.footerHelp = !hasArg(argc, argv, "--no-footer-help");
 
     if (const auto titleArg = argValue(argc, argv, "--title")) {
         title = std::string(*titleArg);
