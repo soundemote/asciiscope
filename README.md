@@ -56,6 +56,8 @@ q or Esc     quit
 By default Asciiscope uses ANSI truecolor for smooth trail fades. Use
 `--native-color` to compare the faster 16-color Windows console path.
 Use `--color-ramp` to print a static palette fade diagnostic and exit.
+Use `--no-help` to start with the in-canvas control panel hidden while keeping
+the title and footer visible.
 
 ## what is this?
 
@@ -226,6 +228,7 @@ Options:
 .\build\Release\asciiscope.exe --preset particle-storm --reel
 .\build\Release\asciiscope.exe --preset neon-tunnel
 .\build\Release\asciiscope.exe --preset circle-calibration
+.\build\Release\asciiscope.exe --preset circle-calibration --no-help
 .\build\Release\asciiscope.exe --preset particle-storm --zoom 1.6
 .\build\Release\asciiscope.exe --preset ghost-spectral --no-hud --title ASCIISCOPE
 ```
