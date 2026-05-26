@@ -27,6 +27,28 @@ should keep asking for named signal sources, latest samples, stats, and timing.
 They should not know about CLAP, JUCE, plugin processors, ports, buses, or host
 callbacks.
 
+## Renderer Direction
+
+Keep the base renderer CPU-first and sample-aware.
+
+Asciiscope's advantage is that trace generation, interpolation, trail aging, and
+glyph placement can stay close to the signal timeline. That gives the visual
+system room to draw from audio/control samples at much higher temporal density
+than a normal video frame loop, limited mainly by the source sample rate and the
+chosen visual budget.
+
+GPU work can still happen later, but it should sit after the CPU visual state:
+
+```text
+signal samples
+    -> CPU visual state / glyph field / trace memory
+    -> optional GPU glow, bloom, feedback, capture, Syphon/Spout output
+```
+
+Do not make OpenGL the implied migration target for the core renderer. Use it
+only when it adds effects or output plumbing that the CPU/glyph path already
+defined.
+
 ## First Plugin Shape
 
 ```text

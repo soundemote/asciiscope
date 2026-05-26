@@ -98,6 +98,21 @@ signal trails that feel like hardware waking up in the dark
 
 The console is not a placeholder. The console is the look.
 
+## renderer goal
+
+Asciiscope is CPU-first on purpose.
+
+The core visual path should be able to draw from signal samples directly, with
+as much temporal detail as the signal source can provide. That keeps the audio
+and visual behavior tightly coherent: a trace can be sampled, interpolated,
+aged, and faded by the same timing model that produced the signal instead of
+being forced into a separate video-frame rhythm too early.
+
+GPU rendering is not rejected, but it is not the destination by itself. A future
+GPU layer should amplify the CPU-built visual state with bloom, glow, feedback,
+color grading, phosphor diffusion, capture surfaces, or Syphon/Spout-style
+output experiments. The base instrument remains sample-aware and glyph-first.
+
 ## files
 
 ```markdown
