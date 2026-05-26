@@ -151,12 +151,12 @@ void AnimationScene::drawSpectralRibbon(const SignalFrame& frame, const SignalSo
 void AnimationScene::drawSinCosCircle(const SignalFrame& frame, const SignalSource& source, const SceneSettings& settings) {
     (void)source;
 
-    constexpr double kTerminalCellAspect = 2.0;
     const double circleHz = std::clamp(settings.circleFrequencyHz, 0.005, 10.0);
+    const double cellAspect = std::clamp(settings.cellAspect, 1.0, 3.0);
     const double headAngle = frame.timeSeconds * circleHz * soemdsp::constant::kTAU;
     const double previousAngle = (frame.timeSeconds - frame.deltaTime) * circleHz * soemdsp::constant::kTAU;
     const double yRadius = 0.64;
-    const double xRadius = yRadius * static_cast<double>(renderer_.height()) / static_cast<double>(renderer_.width()) * kTerminalCellAspect;
+    const double xRadius = yRadius * static_cast<double>(renderer_.height()) / static_cast<double>(renderer_.width()) * cellAspect;
     const double pixelsPerTurn = static_cast<double>(renderer_.height()) * yRadius * soemdsp::constant::kTAU * 0.5;
     const int tracePoints = std::clamp(static_cast<int>(std::ceil(std::abs(headAngle - previousAngle) * pixelsPerTurn / soemdsp::constant::kTAU)) + 2, 4, 240);
 

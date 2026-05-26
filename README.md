@@ -41,6 +41,7 @@ Mouse wheel  deep zoom without clearing current trails
 Left drag    pan the visual center without clearing trails
 z Z          keyboard zoom out / in
 f F          slower or faster circle trace frequency, up to 10 Hz
+--cell-aspect tune terminal cell ratio for round circle calibration
 b B          dim or brighten the trace
 v V          lower or raise the black trail floor
 < >          shorter or longer trails
@@ -214,6 +215,7 @@ Options:
 .\build\Release\asciiscope.exe --mode circle
 .\build\Release\asciiscope.exe --mode circle --circle-hz 0.025
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
+.\build\Release\asciiscope.exe --mode circle --cell-aspect 1.8 --describe
 .\build\Release\asciiscope.exe --preset circle-slow --no-help
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240

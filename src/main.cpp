@@ -27,6 +27,8 @@ constexpr double kMinZoom = 0.25;
 constexpr double kMaxZoom = 16.0;
 constexpr double kMinCircleFrequency = 0.005;
 constexpr double kMaxCircleFrequency = 10.0;
+constexpr double kMinCellAspect = 1.0;
+constexpr double kMaxCellAspect = 3.0;
 constexpr double kMinBrightness = 0.25;
 constexpr double kMaxBrightness = 1.5;
 constexpr int kMinBlackFloor = 0;
@@ -233,6 +235,7 @@ void printHelp() {
       << "  --center-x N           horizontal visual center offset, -4.0 to 4.0\n"
       << "  --center-y N           vertical visual center offset, -4.0 to 4.0\n"
       << "  --circle-hz N          circle trace frequency, 0.005 to 10.0 Hz\n"
+      << "  --cell-aspect N        terminal cell height/width ratio for circle calibration, 1.0 to 3.0\n"
       << "  --brightness N         trace brightness, 0.25 to 1.5\n"
       << "  --black-floor N        ages at or below this draw as empty cells, 0 to 31\n"
       << "  --trail N              trail fade amount, 1 to 8\n"
@@ -301,6 +304,7 @@ struct Controls {
     double centerX{ 0.0 };
     double centerY{ 0.0 };
     double circleFrequencyHz{ 1.25 };
+    double cellAspect{ 2.0 };
     double brightness{ 1.0 };
     int blackFloor{ 0 };
     int fade{ 2 };
@@ -363,27 +367,28 @@ void writeControlHelp(asciiscope::ConsoleRenderer& renderer,
     renderer.writeText(x, y++, "CONTROLS  h/? hide  q/esc quit", 13);
     renderer.writeText(x, y++, "1 bloom  2 tunnel  3 particles  4 spectral  5 circle  0 auto", 11);
     renderer.writeText(x, y++, "space pause  +/- or up/down speed  wheel/z/Z zoom", 11);
-    renderer.writeText(x, y++, "left-click drag pans center  f/F circle frequency  b/B brightness", 11);
+    renderer.writeText(x, y++, "left-click drag pans center  f/F circle frequency  --cell-aspect tunes roundness", 11);
     renderer.writeText(x, y++, "v/V black floor  [/] or left/right density  </> trails", 11);
     renderer.writeText(x, y++, "g glyphs  p palette  c color  o center view  r/x clear trails", 11);
 
     std::snprintf(line,
                   sizeof(line),
-                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  circle %.3fhz  bright %.2fx  black %d",
+                  "mode %-9s speed %.2fx  density %.2fx  zoom %.2fx  circle %.3fhz  aspect %.2fx",
                   mode,
                   controls.speed,
                   controls.density,
                   controls.zoom,
                   controls.circleFrequencyHz,
-                  controls.brightness,
-                  controls.blackFloor);
+                  controls.cellAspect);
     renderer.writeText(x, y++, line, 13);
 
     std::snprintf(line,
                   sizeof(line),
-                  "center %.2f %.2f  trail %d  glyphs %-7.*s palette %-5.*s color %s  last %s",
+                  "center %.2f %.2f  bright %.2fx  black %d  trail %d  glyphs %-7.*s palette %-5.*s color %s  last %s",
                   controls.centerX,
                   controls.centerY,
+                  controls.brightness,
+                  controls.blackFloor,
                   controls.fade,
                   static_cast<int>(glyphStyleName(controls.glyphStyle).size()),
                   glyphStyleName(controls.glyphStyle).data(),
@@ -837,7 +842,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
         std::snprintf(
           footer,
           sizeof(footer),
-          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz bright %.2fx black %d trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
+          "%s | %s | %.2fx den %.2fx zoom %.2fx center %.2f %.2f circle %.3fhz aspect %.2fx bright %.2fx black %d trail %d | %s glyphs %s palette | sig rms %.2f pk %.2f min %.2f max %.2f | %s | last %s | h help",
           controls.paused ? "PAUSED" : "LIVE",
           mode,
           controls.speed,
@@ -846,6 +851,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
           controls.centerX,
           controls.centerY,
           controls.circleFrequencyHz,
+          controls.cellAspect,
           controls.brightness,
           controls.blackFloor,
           controls.fade,
@@ -863,7 +869,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
     std::snprintf(
       footer,
       sizeof(footer),
-      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | bright %.2fx | black %d | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
+      "%s | mode %s | speed %.2fx | density %.2fx | zoom %.2fx | center %.2f %.2f | circle %.3fhz | aspect %.2fx | bright %.2fx | black %d | trail %d | %s glyphs %s palette | color %s | %s | last %s | h help | q quit",
       controls.paused ? "PAUSED" : "LIVE",
       mode,
       controls.speed,
@@ -872,6 +878,7 @@ std::string footerFor(const Controls& controls, const std::optional<asciiscope::
       controls.centerX,
       controls.centerY,
       controls.circleFrequencyHz,
+      controls.cellAspect,
       controls.brightness,
       controls.blackFloor,
       controls.fade,
@@ -930,6 +937,7 @@ void printLaunchDescription(const Controls& controls,
       << "  zoom       " << controls.zoom << "\n"
       << "  center     " << controls.centerX << ", " << controls.centerY << "\n"
       << "  circle hz  " << controls.circleFrequencyHz << "\n"
+      << "  cellaspect " << controls.cellAspect << "\n"
       << "  brightness " << controls.brightness << "\n"
       << "  blackfloor " << controls.blackFloor << "\n"
       << "  trail      " << controls.fade << "\n"
@@ -986,6 +994,7 @@ int main(int argc, char** argv) {
     controls.centerX = boundedDoubleOption(argc, argv, "--center-x", controls.centerX, -4.0, 4.0);
     controls.centerY = boundedDoubleOption(argc, argv, "--center-y", controls.centerY, -4.0, 4.0);
     controls.circleFrequencyHz = boundedDoubleOption(argc, argv, "--circle-hz", controls.circleFrequencyHz, kMinCircleFrequency, kMaxCircleFrequency);
+    controls.cellAspect = boundedDoubleOption(argc, argv, "--cell-aspect", controls.cellAspect, kMinCellAspect, kMaxCellAspect);
     controls.brightness = boundedDoubleOption(argc, argv, "--brightness", controls.brightness, kMinBrightness, kMaxBrightness);
     controls.blackFloor = boundedIntOption(argc, argv, "--black-floor", controls.blackFloor, kMinBlackFloor, kMaxBlackFloor);
     controls.fade = boundedIntOption(argc, argv, "--trail", controls.fade, 1, 8);
@@ -1094,6 +1103,7 @@ int main(int argc, char** argv) {
             .centerX = controls.centerX,
             .centerY = controls.centerY,
             .circleFrequencyHz = controls.circleFrequencyHz,
+            .cellAspect = controls.cellAspect,
             .brightness = controls.brightness,
             .fade = controls.fade
         };
