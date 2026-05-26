@@ -245,6 +245,7 @@ void printHelp() {
       << "  --canvas-only          hide header, border, and footer\n"
       << "  --no-hud               hide the footer readout\n"
       << "  --no-help              start with the in-canvas control panel hidden\n"
+      << "  --no-hint              hide the compact in-canvas h/? control hint\n"
       << "  --no-color             monochrome output\n\n"
       << "  --native-color         use fast 16-color console renderer instead of ANSI truecolor\n"
       << "  --color-ramp           print a static palette fade diagnostic and exit\n"
@@ -929,6 +930,7 @@ void printLaunchDescription(const Controls& controls,
                             bool showChrome,
                             bool showHud,
                             bool showHelp,
+                            bool showHint,
                             std::uint32_t seed,
                             bool tourMode,
                             int tourSeconds) {
@@ -957,6 +959,7 @@ void printLaunchDescription(const Controls& controls,
       << "  chrome     " << (showChrome ? "on" : "off") << "\n"
       << "  hud        " << (showHud && showChrome ? "on" : "off") << "\n"
       << "  help       " << (showHelp && showHud && showChrome ? "on" : "off") << "\n"
+      << "  hint       " << (showHint && !showHelp && showHud && showChrome ? "on" : "off") << "\n"
       << "  color      " << (controls.color ? "on" : "off") << "\n"
       << "  seed       0x" << std::hex << std::uppercase << seed << std::dec << std::nouppercase << "\n";
 }
@@ -985,6 +988,7 @@ int main(int argc, char** argv) {
     const bool tourMode = hasArg(argc, argv, "--tour");
     bool showHud = !hasArg(argc, argv, "--no-hud");
     bool showChrome = !hasArg(argc, argv, "--canvas-only") && !reelMode && !tourMode;
+    bool showHint = !hasArg(argc, argv, "--no-hint");
     std::string title = "ASCIISCOPE / SOEMDSP";
     controls.help = !hasArg(argc, argv, "--no-help");
 
@@ -1069,7 +1073,7 @@ int main(int argc, char** argv) {
     }
 
     if (hasArg(argc, argv, "--describe")) {
-        printLaunchDescription(controls, frameLimit, warmupFrames, fps, holdSeconds, width, height, showChrome, showHud, controls.help, seed, tourMode, tourSeconds);
+        printLaunchDescription(controls, frameLimit, warmupFrames, fps, holdSeconds, width, height, showChrome, showHud, controls.help, showHint, seed, tourMode, tourSeconds);
         return 0;
     }
 
@@ -1164,7 +1168,7 @@ int main(int argc, char** argv) {
         if (showHud && showChrome) {
             if (controls.help) {
                 writeControlHelp(renderer, controls, latestStats);
-            } else {
+            } else if (showHint) {
                 writeControlHint(renderer);
             }
         }

@@ -59,6 +59,7 @@ By default Asciiscope uses ANSI truecolor for smooth trail fades. Use
 Use `--color-ramp` to print a static palette fade diagnostic and exit.
 Use `--no-help` to start with the in-canvas control panel hidden while keeping
 the title and footer visible.
+Use `--no-hint` with `--no-help` to hide the compact in-canvas control hint too.
 Use `--cell-aspect` or live `e`/`E` controls to tune roundness for your current
 font, terminal size, and capture crop.
 
@@ -219,6 +220,7 @@ Options:
 .\build\Release\asciiscope.exe --mode circle --zoom 3 --center-x -0.4 --center-y 0.2
 .\build\Release\asciiscope.exe --mode circle --cell-aspect 1.8 --describe
 .\build\Release\asciiscope.exe --preset circle-slow --no-help
+.\build\Release\asciiscope.exe --preset circle-slow --no-help --no-hint
 .\build\Release\asciiscope.exe --mode spectral
 .\build\Release\asciiscope.exe --mode spectral --frames 240
 .\build\Release\asciiscope.exe --mode spectral --frames 240 --fps 30
